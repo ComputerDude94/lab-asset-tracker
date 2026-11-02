@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab Asset Tracker</title>
+<style>
+/*__CSS__*/
+</style>
+</head>
+<body>
+<div id="app" hidden>
+  <aside id="side">
+    <div class="brand"><span class="logo">&#9638;</span><span class="bt">Lab Asset Tracker<small id="org"></small></span></div>
+    <nav id="nav"></nav>
+    <div class="side-foot"><div id="sync"><span class="dot"></span><span id="sync-t"></span></div></div>
+  </aside>
+  <div class="main-col">
+    <header class="top">
+      <button class="icon-btn" id="btn-menu" aria-label="Toggle menu"></button>
+      <div class="gsearch"><span id="gs-ic"></span><input id="gs" type="search" autocomplete="off" placeholder="Search labs, devices, serials, software, contacts…  ( / )"><div class="gs-res" id="gs-res" hidden></div></div>
+      <span class="spacer"></span>
+      <div class="dd edit-only" id="create"><button class="btn primary" data-dd><span id="plus-ic"></span> Create new</button><div class="dd-menu" id="create-menu"></div></div>
+      <button class="icon-btn" id="btn-mode" title="Light / dark mode" aria-label="Light or dark mode"></button>
+      <button class="btn sm" id="btn-dl" hidden>Download data file</button>
+      <button class="user-btn" id="btn-user"></button>
+    </header>
+    <div id="imp-banner"></div>
+    <main id="view"></main>
+  </div>
+</div>
+<div id="connect" hidden></div>
+<div id="toasts"></div>
+<div id="tip"></div>
+<script>
+/*__JS__*/
+</script>
+</body>
+</html>
