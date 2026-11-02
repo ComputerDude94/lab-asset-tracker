@@ -145,7 +145,7 @@ const SCHEMA = {
       { k: 'name', label: 'Device name', req: true }, { k: 'assetTag', label: 'Asset tag', help: 'e.g. LAB-0042' }, { k: 'serial', label: 'Serial number' }, { k: 'model', label: 'Model' },
       { k: 'platform', label: 'Platform', type: 'select', options: PLATFORMS, req: true }, { k: 'status', label: 'Status', type: 'select', options: DEVICE_STATUSES, help: 'Blank = automatic (Deployed when in a lab)' },
       { k: 'os', label: 'Operating system' }, { k: 'osVersion', label: 'OS version' }, { k: 'ramGB', label: 'RAM (GB)', type: 'number', min: 0 }, { k: 'storageGB', label: 'Storage (GB)', type: 'number', min: 0 },
-      { k: 'labId', label: 'Lab / room', type: 'select', options: labOptions, help: 'Manual assignment is kept when imports run' }, { k: 'user', label: 'Primary user' },
+      { k: 'labId', label: 'Lab / room', type: 'select', options: labOptions, help: 'Manual assignment is kept when imports run' }, { k: 'stockLoc', label: 'Stock location', type: 'select', options: () => S().stockLocations, help: 'Where it physically is while it is not in a lab (Depot, Prep room…)' }, { k: 'user', label: 'Primary user' },
       { k: 'purchaseDate', label: 'Purchase date', type: 'date' }, { k: 'purchaseCost', label: 'Purchase cost', type: 'number', min: 0 },
       { k: 'docLinks', label: 'Links (invoice, PO…; one per line)', type: 'textarea', wide: true, rows: 2 }, { k: 'warrantyEnd', label: 'Warranty ends', type: 'date' }, { k: 'lastCheckIn', label: 'Last check-in', type: 'date' },
       { k: 'notes', label: 'Notes', type: 'textarea', wide: true }],
@@ -235,7 +235,7 @@ const VIEWS = {};
 const NAV = [
   ['dashboard', 'Dashboard', 'home'], ['exec', 'Executive summary', 'trend'],
   ['sep', 'Planning'], ['plan', 'Replacement plan', 'calendar'], ['planner', 'Budget planner', 'dollar'], ['proposals', 'Proposals', 'file'], ['projects', 'Replacement projects', 'tool'], ['techfee', 'Tech Fee projects', 'dollar'],
-  ['sep', 'Assets'], ['assets', 'Asset overview', 'pie'], ['labs', 'Labs', 'monitor'], ['hardware', 'Hardware', 'cpu'], ['devices', 'Devices', 'laptop'], ['models', 'Models & costs', 'tag'], ['audit', 'Labels & audits', 'tag'],
+  ['sep', 'Assets'], ['assets', 'Asset overview', 'pie'], ['inventory', 'Inventory (stock)', 'package'], ['labs', 'Labs', 'monitor'], ['hardware', 'Hardware', 'cpu'], ['devices', 'Devices', 'laptop'], ['models', 'Models & costs', 'tag'], ['audit', 'Labels & audits', 'tag'],
   ['sep', 'Software & people'], ['software', 'Software', 'package'], ['contacts', 'Contacts', 'users'], ['mylabs', 'My labs', 'monitor'], ['users', 'App users', 'users'],
   ['sep', 'Operations'], ['maintenance', 'Maintenance', 'tool'], ['reports', 'Reports', 'trend'], ['charts', 'Charts', 'pie'],
   ['sep', 'Admin'], ['import', 'Import', 'upload'], ['settings', 'Settings & data', 'sliders']

@@ -71,6 +71,7 @@ VIEWS.dashboard = {
       ${tile('#/reports', 'dollar', '', money(sum(lines, lineCost)), 'Inventory at cost', `${money(sum(lines, bookValue))} book value`)}
       ${tile('#/software', 'package', '', fmtNum(d.software.length), 'Software titles', `${money(sum(d.software, s => +s.annualCost || 0))} / yr`)}
       ${tile('#/maintenance', 'tool', openM ? 'warnk' : '', fmtNum(openM), 'Open maintenance', `${money(sum(d.maintenances, m => +m.cost || 0))} total spend`)}
+      ${tile('#/inventory', 'package', '', fmtNum(sum(d.stock, l => +l.qty || 0) + stockDevices().length), 'In stock', `${fmtNum(sum(d.stock.filter(l => l.state === 'Ready to deploy'), l => +l.qty || 0) + stockDevices().filter(x => devStatus(x) === 'Ready to deploy').length)} ready to deploy`)}
       ${tile('#/contacts', 'users', '', fmtNum(d.contacts.length), 'Contacts')}
     </div>` },
       { id: 'spend', title: 'Spend and status', html: `<div class="grid g2">${chartCard('Planned replacement spend by fiscal year', presetCfg('Planned replacement spend by fiscal year').cfg)}${chartCard('Replacement status', presetCfg('Replacement status').cfg)}</div>` },

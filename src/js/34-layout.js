@@ -36,7 +36,7 @@ function bindLayout(root) {
 }
 
 // Board cards: drag a card onto another column to change its status.
-function kanbanDnD(host, table, statuses, dflt) {
+function kanbanDnD(host, table, statuses, dflt, opts = {}) {
   if (!host || DB.readOnly || DB.confirmOnly) return;
   let dragId = null;
   host.ondragstart = e => { const c = e.target.closest?.('[data-card]'); if (!c) return; dragId = c.dataset.card; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); setTimeout(() => c.classList.add('dragging'), 0); };
@@ -45,8 +45,8 @@ function kanbanDnD(host, table, statuses, dflt) {
   host.ondragleave = e => { const col = e.target.closest?.('.kcol'); if (col && !col.contains(e.relatedTarget)) col.classList.remove('over'); };
   host.ondrop = e => {
     const col = e.target.closest?.('.kcol'); if (!dragId || !col) return; e.preventDefault();
-    const rec = DB.get(table, dragId), to = col.dataset.col;
-    if (rec && statuses.includes(to) && (rec.status || dflt) !== to) { DB.put(table, { ...rec, status: to }); DB.log(`Moved ${recName(table, rec)} to ${to}`); toast(`Moved to ${to}`); }
+    const rec = DB.get(table, dragId), to = col.dataset.col, f = opts.field || 'status';
+    if (rec && statuses.includes(to) && (rec[f] || dflt) !== to) { if (opts.move) opts.move(rec, to); else { DB.put(table, { ...rec, [f]: to }); DB.log(`Moved ${recName(table, rec)} to ${to}`); toast(`Moved to ${to}`); } }
     dragId = null; render();
   };
 }

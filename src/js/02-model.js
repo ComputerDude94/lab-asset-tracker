@@ -209,6 +209,7 @@ function recName(t, r) {
   switch (t) {
     case 'labs': return labLabel(r);
     case 'techProjects': return r.title || 'Tech fee project';
+    case 'stock': return `${modelName(r)} × ${r.qty} @ ${r.location || 'stock'}`;
     case 'hardware': return `${modelName(r)} × ${r.qty} @ ${labLabel(DB.get('labs', r.labId))}`;
     case 'labSoftware': return `${DB.get('software', r.softwareId)?.name || 'software'} @ ${labLabel(DB.get('labs', r.labId))}`;
     case 'maintenances': return r.title;
@@ -219,7 +220,7 @@ function recName(t, r) {
     default: return r.name || r.id;
   }
 }
-const TABLE_LABEL = { labs: 'Lab', hardware: 'Hardware line', devices: 'Device', models: 'Model', software: 'Software', contacts: 'Contact', buildings: 'Building', labSoftware: 'Lab software', maintenances: 'Maintenance', charts: 'Pinned chart', proposals: 'Proposal', projects: 'Project', confirmations: 'Confirmation', baselines: 'Baseline', audits: 'Audit', users: 'User', techProjects: 'Tech fee project' };
+const TABLE_LABEL = { stock: 'Stock line', labs: 'Lab', hardware: 'Hardware line', devices: 'Device', models: 'Model', software: 'Software', contacts: 'Contact', buildings: 'Building', labSoftware: 'Lab software', maintenances: 'Maintenance', charts: 'Pinned chart', proposals: 'Proposal', projects: 'Project', confirmations: 'Confirmation', baselines: 'Baseline', audits: 'Audit', users: 'User', techProjects: 'Tech fee project' };
 const recHref = (t, id) => t === 'labs' ? `#/lab/${id}` : t === 'devices' ? `#/device/${id}` : '';
 // Flatten the audit log into one row per affected record.
 function activityRows(filter) {
