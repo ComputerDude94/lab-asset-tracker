@@ -381,8 +381,8 @@ function cmp(a, b) {
 // Data layer: one JSON file in a shared folder, merged record-by-record so several people can edit at once.
 const DATA_FILE = 'lab-tracker-data.json';
 const LOCK_FILE = 'lab-tracker.lock';
-const TABLES = ['buildings', 'labs', 'models', 'hardware', 'devices', 'software', 'labSoftware', 'contacts', 'charts', 'maintenances', 'proposals', 'projects', 'confirmations', 'baselines', 'audits'];
-const DEFAULT_SETTINGS = { orgName: '', fyStartMonth: 7, lifecycle: { Windows: 4, Mac: 4, Other: 4 }, warnMonths: 12, staleDays: 60, licenseWarnDays: 90, currency: 'USD', lowUtilPct: 25, namePatterns: [], assetTagPrefix: 'LAB-', theme: 'wcu',
+const TABLES = ['buildings', 'labs', 'models', 'hardware', 'devices', 'software', 'labSoftware', 'contacts', 'charts', 'maintenances', 'proposals', 'projects', 'confirmations', 'baselines', 'audits', 'users'];
+const DEFAULT_SETTINGS = { orgName: '', fyStartMonth: 7, lifecycle: { Windows: 4, Mac: 4, Other: 4 }, warnMonths: 12, staleDays: 60, licenseWarnDays: 90, currency: 'USD', lowUtilPct: 25, namePatterns: [], assetTagPrefix: 'LAB-', theme: 'wcu', selfAddUsers: true,
   autoImport: { mode: 'ask', seen: {} }, osSupport: [{ match: 'Windows 10', ends: '2025-10-14' }], budgets: {}, blackouts: [], targetUtil: 70,
   proposalTemplate: { intro: 'This request seeks funding to replace aging computers in the labs listed below. These labs support instruction and independent student work, and the equipment has reached or passed its planned service life.', risk: 'Deferring replacement increases the risk of hardware failure during the term, unsupported operating systems and software, loss of manufacturer warranty coverage, and rising repair costs and downtime.' },
   fundingSources: ['Replacement budget', 'Tech fee project', 'Grant', 'Department funds', 'Donation', 'Other'],
@@ -519,6 +519,7 @@ const DB = {
     if (!rec.id) rec.id = uid();
     this.snap(t, rec.id);
     rec._u = new Date().toISOString(); rec._b = this.user;
+    if (!this.idx(t).get(rec.id) && !rec._c) { rec._c = this.user; rec._cu = rec._u; }
     const cur = this.idx(t).get(rec.id);
     let out = rec;
     if (cur) { if (cur !== rec) Object.assign(cur, rec); out = cur; }
@@ -934,7 +935,7 @@ function recName(t, r) {
     default: return r.name || r.id;
   }
 }
-const TABLE_LABEL = { labs: 'Lab', hardware: 'Hardware line', devices: 'Device', models: 'Model', software: 'Software', contacts: 'Contact', buildings: 'Building', labSoftware: 'Lab software', maintenances: 'Maintenance', charts: 'Pinned chart', proposals: 'Proposal', projects: 'Project', confirmations: 'Confirmation', baselines: 'Baseline', audits: 'Audit' };
+const TABLE_LABEL = { labs: 'Lab', hardware: 'Hardware line', devices: 'Device', models: 'Model', software: 'Software', contacts: 'Contact', buildings: 'Building', labSoftware: 'Lab software', maintenances: 'Maintenance', charts: 'Pinned chart', proposals: 'Proposal', projects: 'Project', confirmations: 'Confirmation', baselines: 'Baseline', audits: 'Audit', users: 'User' };
 const recHref = (t, id) => t === 'labs' ? `#/lab/${id}` : t === 'devices' ? `#/device/${id}` : '';
 // Flatten the audit log into one row per affected record.
 function activityRows(filter) {
@@ -1494,6 +1495,15 @@ const SCHEMA = {
     title: 'Installed software', table: 'labSoftware', noDelete: true,
     fields: [{ k: 'version', label: 'Installed version' }, { k: 'notes', label: 'Notes', type: 'textarea', wide: true }]
   },
+  user: {
+    title: 'App user', table: 'users', defaults: () => ({ role: 'Editor', active: true }),
+    fields: [
+      { k: 'name', label: 'Name (shown in the change history)', req: true, help: 'Renaming does not rewrite past history entries' }, { k: 'email', label: 'Email', type: 'email' },
+      { k: 'role', label: 'Role', type: 'select', req: true, options: ['Admin', 'Editor', 'Viewer'], help: 'Viewers open the tracker read-only. Roles are a convenience, not security – anyone who can write to the share folder can edit the data file.' },
+      { k: 'active', label: 'Active', type: 'check', hint: 'Inactive users no longer appear in the “who are you?” list' },
+      { k: 'notes', label: 'Notes', type: 'textarea', wide: true }],
+    remove(rec) { if (rec.name === DB.user) { toast('You can’t remove the user you are signed in as', 'err'); return false; } DB.remove('users', rec.id); }
+  },
   contact: {
     title: 'Contact', table: 'contacts', defaults: () => ({ platform: 'Any' }),
     fields: [
@@ -1514,7 +1524,7 @@ function editEntity(kind, id, defaults = {}, after) {
   const sc = SCHEMA[kind], rec = id ? DB.get(sc.table, id) : null;
   const vals = rec ? (sc.prep ? sc.prep(rec) : clone(rec)) : { ...(sc.defaults ? sc.defaults() : {}), ...defaults, ...(sc.prep ? sc.prep(null) : {}) };
   const form = document.createElement('form'); form.className = 'form-grid';
-  form.innerHTML = sc.fields.map(f => fieldHTML(f, vals[f.k])).join('') + (sc.extra ? sc.extra(vals) : '');
+  form.innerHTML = sc.fields.map(f => fieldHTML(f, vals[f.k])).join('') + (sc.extra ? sc.extra(vals) : '') + (rec && (rec._b || rec._c) ? `<div class="field wide small muted">${rec._c ? 'Created by ' + esc(rec._c) + (rec._cu ? ' on ' + esc(fmtDate(rec._cu.slice(0, 10))) : '') + ' · ' : ''}Last edited by ${esc(rec._b || '—')}${rec._u ? ' on ' + esc(fmtDate(rec._u.slice(0, 10))) : ''}</div>` : '');
   form.addEventListener('submit', e => e.preventDefault());
   sc.onOpen?.(form, vals);
   const done = after || (() => render());
@@ -1547,7 +1557,7 @@ const NAV = [
   ['dashboard', 'Dashboard', 'home'],
   ['sep', 'Planning'], ['plan', 'Replacement plan', 'calendar'], ['planner', 'Budget planner', 'dollar'], ['proposals', 'Proposals', 'file'], ['projects', 'Projects', 'tool'],
   ['sep', 'Assets'], ['labs', 'Labs', 'monitor'], ['hardware', 'Hardware', 'cpu'], ['devices', 'Devices', 'laptop'], ['models', 'Models & costs', 'tag'], ['audit', 'Labels & audits', 'tag'],
-  ['sep', 'Software & people'], ['software', 'Software', 'package'], ['contacts', 'Contacts', 'users'],
+  ['sep', 'Software & people'], ['software', 'Software', 'package'], ['contacts', 'Contacts', 'users'], ['users', 'App users', 'users'],
   ['sep', 'Operations'], ['maintenance', 'Maintenance', 'tool'], ['reports', 'Reports', 'trend'], ['charts', 'Charts', 'pie'],
   ['sep', 'Admin'], ['import', 'Import', 'upload'], ['settings', 'Settings & data', 'sliders']
 ];
@@ -2160,9 +2170,9 @@ function bindDrop(host, onText) {
 VIEWS.import = {
   render(el) {
     const tab = UI.impTab || 'devices';
-    el.innerHTML = pageHead('Import') + `<div class="tabs"><a data-tab="devices" class="${tab === 'devices' ? 'on' : ''}">Intune · Mosyle · LabStats devices</a><a data-tab="usage" class="${tab === 'usage' ? 'on' : ''}">LabStats usage</a><a data-tab="inventory" class="${tab === 'inventory' ? 'on' : ''}">Old tracker / Microsoft Lists</a><a data-tab="warranty" class="${tab === 'warranty' ? 'on' : ''}">Warranty dates</a><a data-tab="apps" class="${tab === 'apps' ? 'on' : ''}">Installed apps</a></div><div id="imp"></div>`;
+    el.innerHTML = pageHead('Import') + `<div class="tabs"><a data-tab="devices" class="${tab === 'devices' ? 'on' : ''}">Intune · Mosyle · LabStats devices</a><a data-tab="usage" class="${tab === 'usage' ? 'on' : ''}">LabStats usage</a><a data-tab="inventory" class="${tab === 'inventory' ? 'on' : ''}">Old tracker / Microsoft Lists</a><a data-tab="labs" class="${tab === 'labs' ? 'on' : ''}">Lab list</a><a data-tab="warranty" class="${tab === 'warranty' ? 'on' : ''}">Warranty dates</a><a data-tab="apps" class="${tab === 'apps' ? 'on' : ''}">Installed apps</a></div><div id="imp"></div>`;
     el.onclick = e => { const t = e.target.closest('[data-tab]'); if (t) { UI.impTab = t.dataset.tab; render(); } };
-    ({ devices: deviceImport, usage: usageImport, inventory: inventoryImport, warranty: warrantyImport, apps: appsImport })[tab]($('#imp', el));
+    ({ devices: deviceImport, usage: usageImport, inventory: inventoryImport, labs: labListImport, warranty: warrantyImport, apps: appsImport })[tab]($('#imp', el));
   }
 };
 
@@ -2427,15 +2437,16 @@ async function startStore(store, seedFn, readOnly = false) {
   if (!disk) throw new Error('No data found.');
   DB.data = normalizeData(emptyData()); DB._idx = {};
   DB.adoptRemote(disk.data, disk.stamp);
+  DB.storeRO = readOnly;
   $('#connect').hidden = true; $('#app').hidden = false;
-  $('#btn-user').innerHTML = `<span class="avatar">${esc(initials(DB.user))}</span><span>${esc(DB.user)}</span>`;
+  await identifyUser();
   DB.pollTimer = setInterval(() => DB.poll(), 15000);
   clearInterval(DB.impTimer); DB.impTimer = setInterval(() => checkImportFolder().catch(() => { }), 60000); setTimeout(() => checkImportFolder().catch(() => { }), 1500);
   if (!location.hash) location.hash = '#/dashboard';
   render();
 }
 
-$('#btn-user').onclick = () => showConnect({ changing: true, saved: null });
+$('#btn-user').onclick = () => identifyUser(true);
 $('#btn-dl').onclick = () => { if (DB.store?.kind === 'file') { download(`lab-tracker-data.json`, JSON.stringify(DB.data), 'application/json'); DB.store.unsaved = false; updateStatus(); } };
 window.addEventListener('beforeunload', e => { if (DB.dirty() || DB.saving || (DB.store?.kind === 'file' && DB.store.unsaved)) { e.preventDefault(); e.returnValue = ''; } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && DB.store) DB.poll(); });
@@ -3951,6 +3962,144 @@ function applyLegacyRows(rs, I, unmapped) {
   labsTouched.forEach(id => { const lab = DB.get('labs', id); if (lab && !(+lab.seats)) { const q = sum(DB.data.hardware.filter(h => h.labId === id && isActiveLine(h)), h => +h.qty || 0); if (q) DB.put('labs', { ...lab, seats: q }); } });    // seats default to the quantity on record
   return { ...c, summary: `${c.lines} new + ${c.upd} updated lines · ${c.l} new labs · ${c.b} buildings · ${c.s} software titles · ${c.ct} contacts${c.dev ? ` · warranty set on ${c.dev} devices` : ''}` };
 }
+
+// ---- 25-lablist.js
+// Bulk-create buildings + labs from a simple list (Building, Room, Lab name, Department, Equipment, Notes).
+// Includes the West Chester University campus lab list (wcupa.edu/infoServices/techFee/techLabs.aspx, page last updated 12/5/23).
+const WCU_LABS = (() => {
+  const L = [], add = (b, room, name, dept, eq, notes) => L.push({ building: b, room, name: name || '', department: dept || '', equipment: eq || '', notes: notes || '' });
+  const A = '201 Carter Drive', B = '25 University Ave', MS = 'Math and Computer Science major students only';
+  add(A, 'Suite 400, Room 420', 'Speech and Hearing Lab', 'Communication Sciences and Disorders', 'Windows', 'Communicative Disorders majors only');
+  [['103', '', 'Mathematics', 'Windows'], ['105', 'Math Tutor Center', 'Mathematics', 'Windows'], ['109', '', 'Mathematics', 'Windows'], ['139', '', 'Computer Science', 'Windows'], ['141', '', 'Computer Science', 'Windows'], ['147', '', 'Computer Science', 'Macs']].forEach(r => add(B, r[0], r[1], r[2], r[3], MS));
+  ['101', '102', '104', '315'].forEach(r => add('Anderson', r, '', '', 'Windows'));
+  [['113', 'Geography and Planning'], ['115', 'Geography and Planning'], ['322', ''], ['324', '']].forEach(r => add('BPMC', r[0], '', r[1], 'Windows'));
+  add('Brandywine Hall', '6', 'TV Studio Lab', 'Digital Media Center', 'Macs', 'Hours 8:00am-4:30pm; availability may vary, call first');
+  [['42', 'Art iMac Lab', 'Art + Design'], ['45', 'Art iMac Lab', 'Art + Design'], ['111', 'iMac Lab', 'Theatre & Dance'], ['157', 'Photography iMac Lab', 'Art + Design']].forEach(r => add('E. O. Bull Center', r[0], r[1], r[2], 'Macs'));
+  ['1st Floor Children\'s Collection', '1st Floor IMC', '1st Floor Periodicals', '2nd Floor Computers', '2nd Floor Government Documents', '2nd Floor Reference Books & Reading Room', 'Library 3rd, 4th, and 5th Floor'].forEach(r => add('FHG Library', r, '', 'Library', 'Windows'));
+  add('Lawrence Hall', '223', 'LARC Tutoring Lab', 'LARC', 'Windows', 'Mon-Fri 8:00am-4:30pm');
+  add('Lawrence Hall', '225', 'Career Development Center', 'Twardowski Career Development Center', 'Windows', 'Mon-Fri 8:00am-4:30pm');
+  add('Merion Science Center', '224', 'Geology', 'Geology & Astronomy', 'Windows | Printer', 'Mon-Fri 8:15am-6:00pm');
+  ['3', '5'].forEach(r => add('Mitchell Hall', r, 'Language Lab', 'Languages & Cultures', 'Windows', 'Mon-Fri 8:15am-6:00pm'));
+  add('Recitation Hall', '110', 'iMac Lab', 'College of Education', 'Macs');
+  add('Ruby Jones', '6', 'Open Lab', 'Political Science', 'Windows');
+  ['174', '386'].forEach(r => add('Science Complex North', r, 'Biology Lab', 'Biology', 'Macs'));
+  add('Science Complex South', '101/103', 'Chemistry Lab', 'Chemistry', 'Windows', 'Chemistry students only; 24/7 key code and card swipe');
+  add('Science Complex South', '314', 'Chemistry Lab', 'Chemistry', 'Windows', 'Chemistry students only');
+  [['122', '', 'Kinesiology'], ['125', '', 'Kinesiology'], ['126', 'Computer Lab', 'Kinesiology'], ['224A', 'Sports Medicine', 'Sports Medicine']].forEach(r => add('Sturzebecker Health Sciences Center', r[0], r[1], r[2], 'Windows'));
+  add('Swope Music Building', '121', 'Presser Music Library', 'Library', 'Windows');
+  add('Swope Music Building', '252', '', 'School of Music', 'Macs');
+  add('Swope Music Building', '342', '', 'Center for Music Technology', 'Macs');
+  add('Sykes Student Union', 'Commuter Lounge Area', '', 'Sykes Student Union', '', 'Mon-Fri 7am-midnight, Sat 8am-midnight, Sun 10am-midnight');
+  add('Sykes Student Union', '3rd Floor Computer Lab', '', 'Sykes Student Union', '', 'Mon-Fri 7am-11:45pm, Sat 8am-11:45pm, Sun 10am-11:45pm');
+  add('Sykes Student Union', '302A', 'Student Lab', 'Sykes Student Union', 'Windows | Macs');
+  return L;
+})();
+
+function applyLabList(rows) {
+  const lc = s => String(s || '').toLowerCase().trim(); let nb = 0, nl = 0, skip = 0;
+  rows.forEach(o => {
+    if (!o.building || !o.room) { skip++; return; }
+    let b = DB.data.buildings.find(x => lc(x.name) === lc(o.building) || (x.code && lc(x.code) === lc(o.building))); if (!b) { b = DB.put('buildings', { name: o.building, code: '' }); nb++; }
+    if (DB.data.labs.some(l => l.buildingId === b.id && lc(l.room) === lc(o.room))) { skip++; return; }
+    const note = [o.equipment && `Listed equipment: ${o.equipment}`, o.notes].filter(Boolean).join('. ');
+    DB.put('labs', { buildingId: b.id, room: o.room, name: o.name, department: o.department, type: /library/i.test(o.department) ? 'Library' : 'Computer lab', status: 'Active', match: '', notes: note }); nl++;
+  });
+  return { nb, nl, skip };
+}
+
+function labListImport(host) {
+  const draw = () => {
+    host.innerHTML = `<div class="card"><p class="small muted">Creates buildings and empty labs (no devices) so you can attach hardware, contacts and software afterwards. Labs already in the tracker (same building + room) are skipped.</p>
+    <h3>West Chester University campus labs</h3>
+    <p class="small muted">${WCU_LABS.length} labs in ${new Set(WCU_LABS.map(l => l.building)).size} buildings, from the Technology Fee “Campus Computer Labs” page (last updated 12/5/23 – the page itself warns it may be out of date). Review and correct rooms after loading.</p>
+    <p><button class="btn primary edit-only" id="wcu">Add WCU campus labs</button></p>
+    <h3 style="margin-top:16px">Or from your own list</h3>
+    <p class="small muted">CSV with headings: <b>Building, Room, Lab name, Department, Equipment, Notes</b>.</p>
+    ${dropHTML('Drop a CSV of buildings and rooms.')}<div id="ll"></div></div>`;
+    const done = r => { DB.log(`Added ${r.nl} labs and ${r.nb} buildings from a lab list`); toast(`Added ${r.nl} labs, ${r.nb} buildings${r.skip ? ` (${r.skip} skipped)` : ''}`); location.hash = '#/labs'; };
+    $('#wcu', host).onclick = () => done(applyLabList(WCU_LABS));
+    bindDrop(host, text => {
+      const p = csvToObjects(text), h = k => p.headers.find(x => lc2(x) === k) || '';
+      const rows = p.rows.map(r => ({ building: r[h('building')], room: r[h('room')] || r[h('room #')], name: r[h('lab name')] || r[h('name')], department: r[h('department')], equipment: r[h('equipment')], notes: r[h('notes')] }));
+      if (!rows.some(r => r.building && r.room)) return toast('Need Building and Room columns', 'err');
+      done(applyLabList(rows));
+    });
+  };
+  const lc2 = s => String(s).toLowerCase().trim();
+  draw();
+}
+
+// ---- 26-users.js
+// App users: a managed list of people so edits are attributed to a chosen, known name.
+const activeUsers = () => DB.data.users.filter(u => u.active !== false).sort((a, b) => cmp(a.name, b.name));
+const userByName = n => DB.data.users.find(u => String(u.name).trim().toLowerCase() === String(n || '').trim().toLowerCase());
+
+function setUser(u) {
+  DB.user = u.name; try { localStorage.setItem('lt-user', u.name); } catch (e) { }
+  DB.readOnly = !!DB.storeRO || u.role === 'Viewer';
+  $('#btn-user').innerHTML = `<span class="avatar">${esc(initials(DB.user))}</span><span>${esc(DB.user)}${u.role === 'Viewer' ? ' (view only)' : ''}</span>`;
+  document.body.classList.toggle('ro', DB.readOnly);
+  updateStatus();
+}
+
+// Called after the data loads (and from the top-bar user button). Resolves when the person is identified.
+function identifyUser(force) {
+  return new Promise(resolve => {
+    const typed = DB.user;
+    if (!DB.storeRO && !DB.data.users.length && typed) { setUser(DB.put('users', { name: typed, role: 'Admin', active: true })); DB.log(`First user created: ${typed} (Admin)`); return resolve(); }
+    const me = userByName(typed);
+    if (!force && me && me.active !== false) { setUser(me); return resolve(); }
+    const users = activeUsers(), canAdd = DB.data.settings.selfAddUsers !== false || DB.get('users', userByName(typed)?.id)?.role === 'Admin';
+    const body = document.createElement('div');
+    body.innerHTML = `<p class="muted small">Pick your name so changes you make are recorded against you in the history.</p>
+      <div class="field"><label>I am…</label><select id="u-sel">${users.map(u => `<option value="${esc(u.id)}"${me && me.id === u.id ? ' selected' : ''}>${esc(u.name)}${u.role ? ' – ' + esc(u.role) : ''}</option>`).join('')}${canAdd && !DB.storeRO ? '<option value="__new">My name isn’t listed – add me</option>' : ''}</select></div>
+      <div id="u-new" hidden><div class="field"><label>Your name</label><input id="u-name" value="${esc(me ? '' : typed)}"></div><div class="field"><label>Email (optional)</label><input id="u-email" type="email"></div></div>
+      ${DB.data.settings.selfAddUsers === false ? '<p class="small muted">New users are added by an Admin under App users.</p>' : ''}
+      <p class="small" style="margin-top:12px"><a href="#" id="u-folder">Change data folder…</a></p>`;
+    const sel = $('#u-sel', body), nw = $('#u-new', body), sync = () => { nw.hidden = sel.value !== '__new'; }; sel.onchange = sync; sync();
+    $('#u-folder', body).onclick = e => { e.preventDefault(); closeModal(); showConnect({ changing: true, saved: null }); resolve(); };
+    modal({ title: force ? 'Who is editing?' : 'Who are you?', body, buttons: [{
+      label: 'Continue', cls: 'primary', onClick: () => {
+        let u;
+        if (sel.value === '__new') {
+          const name = $('#u-name', body).value.trim(); if (!name) { toast('Enter your name', 'err'); return false; }
+          u = userByName(name); if (!u) { u = DB.put('users', { name, email: $('#u-email', body).value.trim(), role: 'Editor', active: true }); DB.log(`User added: ${name}`); }
+          else if (u.active === false) { toast('That user is inactive – ask an Admin', 'err'); return false; }
+        } else u = DB.get('users', sel.value);
+        if (!u) return false;
+        setUser(u); resolve(); render();
+      }
+    }] });
+    if (!users.length && !canAdd) { toast('No users exist yet – an Admin must add you', 'err'); resolve(); }
+  });
+}
+
+function userStats() {
+  const m = new Map();
+  const get = n => { const k = String(n || '').toLowerCase(); if (!m.has(k)) m.set(k, { edits: 0, last: '', created: 0 }); return m.get(k); };
+  DB.data.audit.forEach(a => { const s = get(a.u); s.edits += (a.i && a.i.length) || 1; if (a.t > s.last) s.last = a.t; });
+  TABLES.forEach(t => { if (t === 'audits' || t === 'users') return; DB.data[t].forEach(r => { if (r._c) get(r._c).created++; }); });
+  return n => m.get(String(n || '').toLowerCase()) || { edits: 0, last: '', created: 0 };
+}
+
+VIEWS.users = {
+  render(el) {
+    const st = userStats(), selfAdd = DB.data.settings.selfAddUsers !== false;
+    el.innerHTML = pageHead('App users', `<button class="btn primary edit-only" data-act="add">Add user</button>`) +
+      `<p class="muted small">People who use this tracker. Everyone picks their name when they open it, and every change is recorded against that name (see “Last edited by” on each record and the change history). Roles are a convenience, not security.</p>
+      <label class="check edit-only" style="margin:8px 0"><input type="checkbox" id="selfadd"${selfAdd ? ' checked' : ''}> Let people add themselves when their name isn’t listed</label><div id="t"></div>`;
+    $('#selfadd', el).onchange = e => { DB.setSetting('selfAddUsers', e.target.checked); DB.log(`Self-adding users ${e.target.checked ? 'allowed' : 'turned off'}`); };
+    mountTable($('#t', el), {
+      id: 'users', csvName: 'app-users', rows: () => DB.data.users, rowId: r => r.id, onRow: id => editEntity('user', id), defaultSort: { k: 'name', dir: 'asc' },
+      cols: [
+        { k: 'name', label: 'Name', val: r => r.name, html: r => `${esc(r.name)}${r.name === DB.user ? ' <span class="badge ok">you</span>' : ''}` }, { k: 'email', label: 'Email', val: r => r.email },
+        { k: 'role', label: 'Role', val: r => r.role }, { k: 'active', label: 'Status', val: r => r.active === false ? 'Inactive' : 'Active' },
+        { k: 'edits', label: 'Changes made', val: r => st(r.name).edits, num: true }, { k: 'created', label: 'Records created', val: r => st(r.name).created, num: true },
+        { k: 'last', label: 'Last change', val: r => st(r.name).last ? fmtDate(st(r.name).last.slice(0, 10)) : '' }]
+    });
+    el.onclick = e => { if (e.target.closest('[data-act="add"]')) editEntity('user'); };
+  }
+};
 
 </script>
 </body>

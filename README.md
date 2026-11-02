@@ -113,3 +113,9 @@ as a keyword. Rooms you assign by hand are never overwritten. "Re-link by name" 
 
 ## Develop
 Edit `src/` then `node build.js` to regenerate `lab-tracker.html`. Try the demo: open the page and choose "Try it with sample data".
+
+## App users and audit trail
+Everyone picks their name when they open the tracker (App users page). The first person to connect becomes an Admin; others pick themselves from the list or add themselves (an Admin can turn self-adding off). Every record stores who created it and who last edited it, and the change history records the name per save. Viewer-role users open read-only. Roles are a convenience, not security: anyone who can write to the share folder can edit the data file.
+
+## Campus lab list
+Import > Lab list creates buildings and empty labs from a CSV (Building, Room, Lab name, Department, Equipment, Notes) or from the built-in West Chester University campus list (wcupa.edu Technology Fee "Campus Computer Labs" page, last updated 12/5/23).

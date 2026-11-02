@@ -173,6 +173,15 @@ const SCHEMA = {
     title: 'Installed software', table: 'labSoftware', noDelete: true,
     fields: [{ k: 'version', label: 'Installed version' }, { k: 'notes', label: 'Notes', type: 'textarea', wide: true }]
   },
+  user: {
+    title: 'App user', table: 'users', defaults: () => ({ role: 'Editor', active: true }),
+    fields: [
+      { k: 'name', label: 'Name (shown in the change history)', req: true, help: 'Renaming does not rewrite past history entries' }, { k: 'email', label: 'Email', type: 'email' },
+      { k: 'role', label: 'Role', type: 'select', req: true, options: ['Admin', 'Editor', 'Viewer'], help: 'Viewers open the tracker read-only. Roles are a convenience, not security – anyone who can write to the share folder can edit the data file.' },
+      { k: 'active', label: 'Active', type: 'check', hint: 'Inactive users no longer appear in the “who are you?” list' },
+      { k: 'notes', label: 'Notes', type: 'textarea', wide: true }],
+    remove(rec) { if (rec.name === DB.user) { toast('You can’t remove the user you are signed in as', 'err'); return false; } DB.remove('users', rec.id); }
+  },
   contact: {
     title: 'Contact', table: 'contacts', defaults: () => ({ platform: 'Any' }),
     fields: [
@@ -193,7 +202,7 @@ function editEntity(kind, id, defaults = {}, after) {
   const sc = SCHEMA[kind], rec = id ? DB.get(sc.table, id) : null;
   const vals = rec ? (sc.prep ? sc.prep(rec) : clone(rec)) : { ...(sc.defaults ? sc.defaults() : {}), ...defaults, ...(sc.prep ? sc.prep(null) : {}) };
   const form = document.createElement('form'); form.className = 'form-grid';
-  form.innerHTML = sc.fields.map(f => fieldHTML(f, vals[f.k])).join('') + (sc.extra ? sc.extra(vals) : '');
+  form.innerHTML = sc.fields.map(f => fieldHTML(f, vals[f.k])).join('') + (sc.extra ? sc.extra(vals) : '') + (rec && (rec._b || rec._c) ? `<div class="field wide small muted">${rec._c ? 'Created by ' + esc(rec._c) + (rec._cu ? ' on ' + esc(fmtDate(rec._cu.slice(0, 10))) : '') + ' · ' : ''}Last edited by ${esc(rec._b || '—')}${rec._u ? ' on ' + esc(fmtDate(rec._u.slice(0, 10))) : ''}</div>` : '');
   form.addEventListener('submit', e => e.preventDefault());
   sc.onOpen?.(form, vals);
   const done = after || (() => render());
@@ -226,7 +235,7 @@ const NAV = [
   ['dashboard', 'Dashboard', 'home'],
   ['sep', 'Planning'], ['plan', 'Replacement plan', 'calendar'], ['planner', 'Budget planner', 'dollar'], ['proposals', 'Proposals', 'file'], ['projects', 'Projects', 'tool'],
   ['sep', 'Assets'], ['labs', 'Labs', 'monitor'], ['hardware', 'Hardware', 'cpu'], ['devices', 'Devices', 'laptop'], ['models', 'Models & costs', 'tag'], ['audit', 'Labels & audits', 'tag'],
-  ['sep', 'Software & people'], ['software', 'Software', 'package'], ['contacts', 'Contacts', 'users'],
+  ['sep', 'Software & people'], ['software', 'Software', 'package'], ['contacts', 'Contacts', 'users'], ['users', 'App users', 'users'],
   ['sep', 'Operations'], ['maintenance', 'Maintenance', 'tool'], ['reports', 'Reports', 'trend'], ['charts', 'Charts', 'pie'],
   ['sep', 'Admin'], ['import', 'Import', 'upload'], ['settings', 'Settings & data', 'sliders']
 ];

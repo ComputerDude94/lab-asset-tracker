@@ -218,7 +218,7 @@ function recName(t, r) {
     default: return r.name || r.id;
   }
 }
-const TABLE_LABEL = { labs: 'Lab', hardware: 'Hardware line', devices: 'Device', models: 'Model', software: 'Software', contacts: 'Contact', buildings: 'Building', labSoftware: 'Lab software', maintenances: 'Maintenance', charts: 'Pinned chart', proposals: 'Proposal', projects: 'Project', confirmations: 'Confirmation', baselines: 'Baseline', audits: 'Audit' };
+const TABLE_LABEL = { labs: 'Lab', hardware: 'Hardware line', devices: 'Device', models: 'Model', software: 'Software', contacts: 'Contact', buildings: 'Building', labSoftware: 'Lab software', maintenances: 'Maintenance', charts: 'Pinned chart', proposals: 'Proposal', projects: 'Project', confirmations: 'Confirmation', baselines: 'Baseline', audits: 'Audit', users: 'User' };
 const recHref = (t, id) => t === 'labs' ? `#/lab/${id}` : t === 'devices' ? `#/device/${id}` : '';
 // Flatten the audit log into one row per affected record.
 function activityRows(filter) {

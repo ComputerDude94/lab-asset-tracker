@@ -57,15 +57,16 @@ async function startStore(store, seedFn, readOnly = false) {
   if (!disk) throw new Error('No data found.');
   DB.data = normalizeData(emptyData()); DB._idx = {};
   DB.adoptRemote(disk.data, disk.stamp);
+  DB.storeRO = readOnly;
   $('#connect').hidden = true; $('#app').hidden = false;
-  $('#btn-user').innerHTML = `<span class="avatar">${esc(initials(DB.user))}</span><span>${esc(DB.user)}</span>`;
+  await identifyUser();
   DB.pollTimer = setInterval(() => DB.poll(), 15000);
   clearInterval(DB.impTimer); DB.impTimer = setInterval(() => checkImportFolder().catch(() => { }), 60000); setTimeout(() => checkImportFolder().catch(() => { }), 1500);
   if (!location.hash) location.hash = '#/dashboard';
   render();
 }
 
-$('#btn-user').onclick = () => showConnect({ changing: true, saved: null });
+$('#btn-user').onclick = () => identifyUser(true);
 $('#btn-dl').onclick = () => { if (DB.store?.kind === 'file') { download(`lab-tracker-data.json`, JSON.stringify(DB.data), 'application/json'); DB.store.unsaved = false; updateStatus(); } };
 window.addEventListener('beforeunload', e => { if (DB.dirty() || DB.saving || (DB.store?.kind === 'file' && DB.store.unsaved)) { e.preventDefault(); e.returnValue = ''; } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && DB.store) DB.poll(); });
