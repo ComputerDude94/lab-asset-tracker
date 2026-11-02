@@ -59,7 +59,7 @@ async function startStore(store, seedFn, readOnly = false) {
   DB.adoptRemote(disk.data, disk.stamp);
   DB.storeRO = readOnly;
   $('#connect').hidden = true; $('#app').hidden = false;
-  await identifyUser();
+  await identifyUser(); syncAutoProjects();
   DB.pollTimer = setInterval(() => DB.poll(), 15000);
   clearInterval(DB.impTimer); DB.impTimer = setInterval(() => checkImportFolder().catch(() => { }), 60000); setTimeout(() => checkImportFolder().catch(() => { }), 1500);
   if (!location.hash) location.hash = '#/dashboard';

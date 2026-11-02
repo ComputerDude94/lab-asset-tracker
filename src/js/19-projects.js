@@ -12,10 +12,27 @@ SCHEMA.project = {
     { k: 'quoteDate', label: 'Quote date', type: 'date' }, { k: 'poDate', label: 'PO date', type: 'date' }, { k: 'deliveryDate', label: 'Delivery date', type: 'date' }, { k: 'installStart', label: 'Install start', type: 'date' }, { k: 'installEnd', label: 'Install end', type: 'date' },
     { k: 'docLinks', label: 'Links to quotes / PO / invoices (one per line)', type: 'textarea', wide: true }, { k: 'notes', label: 'Notes', type: 'textarea', wide: true }]
 };
+// Auto-create one project per lab that is overdue or due within the horizon. Ids are deterministic (auto-<lab>-<fy>) so two people
+// opening the tracker at once produce the same record, not duplicates. Deleted auto projects are remembered and not re-created.
+const autoCfg = () => Object.assign({ on: true, months: 12, dismissed: [] }, S().autoProjects || {});
+function syncAutoProjects() {
+  const c = autoCfg(); if (!c.on || DB.readOnly || !DB.data.hardware.length) return 0;
+  const t = todayStr(), R = replacementPlan({ from: t, to: addMonths(t, +c.months || 12), overdue: true }); let n = 0, u = 0;
+  R.labs.forEach(g => {
+    const fy = fiscalYear(g.first < t ? t : g.first), id = `auto-${g.lab.id}-${fy}`, amount = Math.round(g.cost), cur = DB.get('projects', id);
+    if (cur) { if (cur.auto && (cur.status || 'Planned') === 'Planned' && cur.amount !== amount) { DB.put('projects', { ...cur, amount }); u++; } return; }
+    if ((c.dismissed || []).includes(id) || DB.data.projects.some(p => p.labId === g.lab.id && p.fy === fy)) return;
+    DB.put('projects', { id, auto: true, title: `${labLabel(g.lab)} replacement FY${fy}`, labId: g.lab.id, fy, status: 'Planned', amount, notes: 'Created automatically from the replacement plan.' }); n++;
+  });
+  if (n) DB.log(`Auto-created ${n} replacement project${n > 1 ? 's' : ''} from the replacement plan`);
+  return n + u;
+}
+SCHEMA.project.remove = rec => { if (rec.auto) DB.setSetting('autoProjects', { ...autoCfg(), dismissed: [...(autoCfg().dismissed || []), rec.id] }); DB.remove('projects', rec.id); };
 VIEWS.projects = {
   render(el) {
-    const tab = UI.projTab || 'board', list = DB.data.projects;
-    el.innerHTML = pageHead('Replacement projects', `<button class="btn primary edit-only" id="npj">${ic('plus')} New project</button>`) + `<div class="tabs">${[['board', 'Board'], ['table', 'Table'], ['timeline', 'Install timeline']].map(([k, l]) => `<a data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</a>`).join('')}</div><div id="t"></div>`;
+    syncAutoProjects();
+    const tab = UI.projTab || 'board', list = DB.data.projects, ac = autoCfg();
+    el.innerHTML = pageHead('Replacement projects', `<button class="btn primary edit-only" id="npj">${ic('plus')} New project</button>`) + `<div class="small muted edit-only" style="margin-bottom:10px"><label class="check"><input type="checkbox" id="ap-on"${ac.on ? ' checked' : ''}> Create projects automatically for labs that are overdue or due within</label> <input type="number" id="ap-m" min="1" max="60" value="${ac.months}" style="width:64px"> months. They appear here as Planned; move them along the board as the project progresses.</div>` + `<div class="tabs">${[['board', 'Board'], ['table', 'Table'], ['timeline', 'Install timeline']].map(([k, l]) => `<a data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</a>`).join('')}</div><div id="t"></div>`;
     const host = $('#t', el), lab = p => p.labId ? labLabel(DB.get('labs', p.labId)) : '';
     const warn = p => { const b = blackoutHit(p); return b ? `<span class="badge bad" title="Install overlaps a blackout window">⚠ ${esc(b)}</span>` : ''; };
     if (tab === 'board') {
@@ -37,6 +54,8 @@ VIEWS.projects = {
       ${ps.map(p => `<div style="padding:4px 0">${esc(p.title)}<div class="muted">${esc(lab(p))}</div></div><div style="grid-column:2/14;display:grid;grid-template-columns:repeat(12,1fr);gap:2px;align-items:center"><div data-e="${p.id}" title="${esc(p.title)}" style="cursor:pointer;grid-column:${col(p.installStart < s ? s : p.installStart)}/${col((p.installEnd || p.installStart) > e ? e : (p.installEnd || p.installStart)) + 1};height:20px;border-radius:4px;background:${blackoutHit(p) ? 'var(--danger)' : 'var(--accent)'}"></div></div>`).join('') || '<div style="grid-column:1/14" class="empty">No installs scheduled this year. Set Install start/end on a project.</div>'}</div></div>`;
       $('#tl-fy', host)?.addEventListener('change', e => { UI.projFY = +e.target.value; render(); });
     }
+    $('#ap-on', el).onchange = e => { DB.setSetting('autoProjects', { ...autoCfg(), on: e.target.checked }); render(); };
+    $('#ap-m', el).onchange = e => { DB.setSetting('autoProjects', { ...autoCfg(), months: Math.max(1, +e.target.value || 12) }); render(); };
     el.onclick = e => {
       const t = e.target, tb = t.closest('[data-tab]'); if (tb) { UI.projTab = tb.dataset.tab; return render(); }
       const mv = t.closest('[data-mv]'); if (mv) { const [id, d] = mv.dataset.mv.split('|'), p = DB.get('projects', id), i = PROJECT_STATUS.indexOf(p.status || 'Planned'); DB.put('projects', { ...p, status: PROJECT_STATUS[Math.max(0, Math.min(6, i + +d))] }); return render(); }

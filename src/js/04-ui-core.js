@@ -252,5 +252,5 @@ function render() {
   updateStatus();
 }
 window.addEventListener('hashchange', () => { window.scrollTo(0, 0); render(); });
-function onRemoteChange() { if (UI.modal) { UI.needsRender = true; return; } const a = document.activeElement; if (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName) && $('#view').contains(a)) return; render(); }
+function onRemoteChange() { syncAutoProjects(); if (UI.modal) { UI.needsRender = true; return; } const a = document.activeElement; if (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName) && $('#view').contains(a)) return; render(); }
 const pageHead = (title, actions = '', crumb = '') => `<div class="crumbs"><a href="#/dashboard">Home</a> › ${crumb || esc(title)}</div><div class="page-h"><h1>${esc(title)}</h1><span class="spacer"></span>${actions}</div>`;

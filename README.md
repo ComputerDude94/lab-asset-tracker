@@ -119,3 +119,6 @@ Everyone picks their name when they open the tracker (App users page). The first
 
 ## Campus lab list
 Import > Lab list creates buildings and empty labs from a CSV (Building, Room, Lab name, Department, Equipment, Notes) or from the built-in West Chester University campus list (wcupa.edu Technology Fee "Campus Computer Labs" page, last updated 12/5/23).
+
+## Automatic replacement projects
+The Projects page creates a Planned project for every lab that is overdue or due within the horizon (default 12 months, adjustable or switchable off on that page). Amounts follow the replacement plan until you move the project past Planned. Projects use fixed ids per lab and fiscal year, so two people opening the tracker at once don't create duplicates; a deleted auto project isn't re-created.
