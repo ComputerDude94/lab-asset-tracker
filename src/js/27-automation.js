@@ -52,14 +52,16 @@ function defaultBaselines() {
 
 let AUTOMATING = false;
 function syncAutoProjects() {
-  if (AUTOMATING || DB.readOnly || !DB.data.hardware.length) return;
+  if (AUTOMATING || DB.readOnly || DB.confirmOnly || !DB.data.hardware.length) return;
   AUTOMATING = true;
-  try { relinkDevices(true); createAutoProjects(); advanceProjects(); closeOutProjects(); defaultBaselines(); } finally { AUTOMATING = false; }
+  try { relinkDevices(true); createAutoProjects(); suggestInstallWindows(); advanceProjects(); closeOutProjects(); defaultBaselines(); } finally { AUTOMATING = false; }
 }
 
 // Extra lines for the dashboard "needs attention" list.
 function automationAlerts() {
   const t = todayStr(), a = [], open = DB.data.projects.filter(p => !['Complete', 'On hold'].includes(p.status || 'Planned'));
+  const noq = open.filter(p => p.poNo && !p.quoteLink && !/quote/i.test(p.docLinks || '')).length; if (noq) a.push(['', `${noq} project(s) have a PO number but no quote linked`, '#/projects']);
+  const noi = DB.data.projects.filter(p => (p.status === 'Complete') && !p.invoiceLink).length; if (noi) a.push(['', `${noi} completed project(s) have no invoice linked`, '#/projects']);
   const nd = open.filter(noticeDue).length; if (nd) a.push(['warn', `${nd} replacement project(s) have a lab whose contacts haven’t been emailed yet`, '#/projects']);
   const stalled = open.filter(p => (p.status || 'Planned') !== 'Planned' && p._u && daysBetween(p._u.slice(0, 10), t) > 45).length; if (stalled) a.push(['warn', `${stalled} project(s) haven’t been updated in over 45 days`, '#/projects']);
   const tf = DB.data.techProjects, due = tf.filter(x => x.reportDue && !x.reportSubmitted && x.reportDue <= addMonths(t, 1)).length; if (due) a.push(['warn', `${due} Tech Fee project report(s) are due within a month`, '#/techfee']);

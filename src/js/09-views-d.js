@@ -43,12 +43,14 @@ VIEWS.maintenance = {
   }
 };
 
+const REPORT_EXT = {};
 VIEWS.reports = {
   render(el) {
     const tab = UI.repTab || 'depreciation', t = todayStr();
-    el.innerHTML = pageHead('Reports') + `<div class="tabs">${[['depreciation', 'Depreciation'], ['drift', 'Software drift'], ['licenses', 'Licenses'], ['tco', 'Cost of ownership'], ['rightsize', 'Right-sizing'], ['trends', 'Usage trends'], ['surplus', 'Surplus & redeploy'], ['quality', 'Data quality'], ['calendar', 'Calendar export'], ['activity', 'Activity log'], ['ossupport', 'OS support'], ['funding', 'Funding'], ['expiring', 'Licenses & warranties'], ['health', 'Device health']].map(([k, l]) => `<a data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</a>`).join('')}</div><div id="t"></div>`;
+    el.innerHTML = pageHead('Reports') + `<div class="tabs">${[['depreciation', 'Depreciation'], ['drift', 'Software drift'], ['licenses', 'Licenses'], ['tco', 'Cost of ownership'], ['rightsize', 'Right-sizing'], ['trends', 'Usage trends'], ['surplus', 'Surplus & redeploy'], ['quality', 'Data quality'], ['calendar', 'Calendar export'], ['activity', 'Activity log'], ['ossupport', 'OS support'], ['funding', 'Funding'], ['expiring', 'Licenses & warranties'], ['health', 'Device health'], ['finance', 'Scenarios & rollover'], ['cleanup', 'Cleanup']].map(([k, l]) => `<a data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</a>`).join('')}</div><div id="t"></div>`;
     const host = $('#t', el);
-    if (tab === 'depreciation') {
+    if (REPORT_EXT[tab]) REPORT_EXT[tab](host);
+    else if (tab === 'depreciation') {
       const lines = DB.data.hardware.filter(isActiveLine);
       host.innerHTML = `<div class="kpis">${tile('', 'dollar', '', money(sum(lines, lineCost)), 'Purchase / replacement cost')}${tile('', 'trend', 'warnk', money(sum(lines, l => lineCost(l) - bookValue(l))), 'Depreciated to date')}${tile('', 'cpu', 'good', money(sum(lines, bookValue)), 'Current book value')}</div><p class="muted small">Straight-line over each line’s lifecycle (model or platform default), no salvage value, measured from the last replacement (or purchase) date.</p><div id="tt"></div>`;
       mountTable($('#tt', host), {

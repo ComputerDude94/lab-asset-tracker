@@ -35,7 +35,7 @@ async function runHealthChecks() {
 }
 async function healthDialog() {
   const body = document.createElement('div'); body.innerHTML = '<p class="muted">Running checks…</p>';
-  modal({ title: 'Data safety health check', body, wide: true, buttons: [{ label: 'Close', cls: 'primary' }] });
+  modal({ title: 'Data safety health check', body, wide: true, buttons: [{ label: 'IT setup note', onClick: () => { download('lab-tracker-IT-note.txt', itNoteText(), 'text/plain'); return false; } }, { label: 'Two-computer save test…', onClick: () => { pilotDialog(); return false; } }, { label: 'Close', cls: 'primary' }] });
   const r = await runHealthChecks();
   body.innerHTML = `<table><thead><tr><th></th><th>Check</th><th>Result</th></tr></thead><tbody>${r.map(x => `<tr><td>${x.ok ? '<span class="badge ok">pass</span>' : x.warn ? '<span class="badge warn">warn</span>' : '<span class="badge bad">FAIL</span>'}</td><td>${esc(x.n)}</td><td class="small">${esc(x.d)}</td></tr>`).join('')}</tbody></table>
   <p class="small muted" style="margin-top:12px">Checks are done from this computer only. For a true multi-user test, run it from two computers, make edits on both at the same time, then run it again.</p>`;

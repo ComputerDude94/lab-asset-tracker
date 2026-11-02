@@ -177,7 +177,8 @@ const SCHEMA = {
     title: 'App user', table: 'users', defaults: () => ({ role: 'Editor', active: true }),
     fields: [
       { k: 'name', label: 'Name (shown in the change history)', req: true, help: 'Renaming does not rewrite past history entries' }, { k: 'email', label: 'Email', type: 'email' },
-      { k: 'role', label: 'Role', type: 'select', req: true, options: ['Admin', 'Editor', 'Viewer'], help: 'Viewers open the tracker read-only. Roles are a convenience, not security – anyone who can write to the share folder can edit the data file.' },
+      { k: 'role', label: 'Role', type: 'select', req: true, options: ['Admin', 'Editor', 'Lab manager', 'Viewer'], help: 'Lab managers see only the My labs page and can confirm devices and applications. Viewers open the tracker read-only. Roles are a convenience, not security – anyone who can write to the share folder can edit the data file.' },
+      { k: 'contactId', label: 'Linked contact', type: 'select', options: contactOptions, help: 'Used by My labs to find this person’s labs (otherwise matched by email)' },
       { k: 'active', label: 'Active', type: 'check', hint: 'Inactive users no longer appear in the “who are you?” list' },
       { k: 'notes', label: 'Notes', type: 'textarea', wide: true }],
     remove(rec) { if (rec.name === DB.user) { toast('You can’t remove the user you are signed in as', 'err'); return false; } DB.remove('users', rec.id); }
@@ -235,7 +236,7 @@ const NAV = [
   ['dashboard', 'Dashboard', 'home'],
   ['sep', 'Planning'], ['plan', 'Replacement plan', 'calendar'], ['planner', 'Budget planner', 'dollar'], ['proposals', 'Proposals', 'file'], ['projects', 'Replacement projects', 'tool'], ['techfee', 'Tech Fee projects', 'dollar'],
   ['sep', 'Assets'], ['labs', 'Labs', 'monitor'], ['hardware', 'Hardware', 'cpu'], ['devices', 'Devices', 'laptop'], ['models', 'Models & costs', 'tag'], ['audit', 'Labels & audits', 'tag'],
-  ['sep', 'Software & people'], ['software', 'Software', 'package'], ['contacts', 'Contacts', 'users'], ['users', 'App users', 'users'],
+  ['sep', 'Software & people'], ['software', 'Software', 'package'], ['contacts', 'Contacts', 'users'], ['mylabs', 'My labs', 'monitor'], ['users', 'App users', 'users'],
   ['sep', 'Operations'], ['maintenance', 'Maintenance', 'tool'], ['reports', 'Reports', 'trend'], ['charts', 'Charts', 'pie'],
   ['sep', 'Admin'], ['import', 'Import', 'upload'], ['settings', 'Settings & data', 'sliders']
 ];

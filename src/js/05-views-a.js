@@ -233,7 +233,7 @@ VIEWS.lab = {
       maintenance: () => `<div class="card"><div class="card-h"><h3>Maintenance & repairs</h3><span class="spacer"></span><button class="btn sm primary edit-only" data-act="addm">${ic('plus')} Log maintenance</button></div>${maintTable(maint)}</div>`,
       history: () => `<div class="card"><div class="card-h"><h3>Change history</h3></div>${timelineHTML(labHistory(lab.id))}</div>`
     }[tab]();
-    el.innerHTML = pageHead(labLabel(lab), `<button class="btn edit-only" data-act="email">${ic('file')} Email contacts</button><button class="btn edit-only" data-act="edit">Edit lab</button><button class="btn primary edit-only" data-act="addhw">${ic('plus')} Add hardware</button>`, `<a href="#/labs">Labs</a> › ${esc(labLabel(lab))}`) + `
+    el.innerHTML = pageHead(labLabel(lab), `<a class="btn" href="#/labsheet/${lab.id}">${ic('file')} Lab sheet</a><button class="btn edit-only" data-act="email">${ic('file')} Email contacts</button><button class="btn edit-only" data-act="edit">Edit lab</button><button class="btn primary edit-only" data-act="addhw">${ic('plus')} Add hardware</button>`, `<a href="#/labs">Labs</a> › ${esc(labLabel(lab))}`) + `
     <div class="split"><div>
       <div class="card"><div class="card-h"><h3>Lab details</h3><span class="badge ${lab.status === 'Closed' ? '' : 'ok'} dot">${esc(lab.status || 'Active')}</span></div>
         <dl class="dl"><dt>Building</dt><dd>${esc(b?.name || '—')}</dd><dt>Room</dt><dd>${esc(lab.room)}</dd><dt>Department</dt><dd>${esc(lab.department || '—')}</dd><dt>Type</dt><dd>${esc(lab.type || '—')}</dd><dt>Seats</dt><dd>${lab.seats || '—'}</dd>

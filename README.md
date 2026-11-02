@@ -134,3 +134,12 @@ The Projects page creates a Planned project for every lab that is overdue or due
 - Board cards show notice status with a one-click email to the lab's contacts; the dashboard flags projects whose lab hasn't been emailed.
 - Devices are re-linked to labs by name automatically (hand-assigned devices are left alone); labs with no baseline get the only baseline for their platform.
 - The dashboard "needs attention" list adds stalled projects, Tech Fee reports due, proposals waiting on a decision, and devices missing a Lenovo/Apple warranty date.
+
+## Pilot, lab managers, finance and cleanup
+- **Shared-folder pilot:** Settings > Data safety > health check now has an **IT setup note** download (permissions, files created, backup, limits) and a **Two-computer save test** (20 locked updates each from two computers at once; reports lost updates if the lock fails). Run it on your real share before relying on multi-user saving.
+- **My labs:** users with the **Lab manager** role (linked to a contact on App users) see only their labs, devices and applications and press "Everything is correct" or "Send changes". That records a confirmation; they can't edit anything else.
+- **Projects:** quote / PO / invoice links per project; the dashboard flags a PO with no quote and a completed project with no invoice. After a delivery date is set, an install window (default 10 days, adjustable on the Projects page) is placed outside blackout dates automatically.
+- **Reports > Scenarios & rollover:** saved lifecycle scenarios compared with budget, and carry-forward of unspent money per funding source (Tech Fee projects use awarded and spent).
+- **Reports > Cleanup:** duplicate labs (same building + room), devices (same serial) and models (same name ignoring punctuation) with one-click merge, plus orphaned records.
+- **Lab sheet:** a printable one-page summary with a verification column, from each lab page.
+- **tools/:** `Register-NightlyExport.ps1` schedules the Intune export; Mosyle and LabStats scheduled pulls are not provided because their API details weren't verified (see tools/README.md).

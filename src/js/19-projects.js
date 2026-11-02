@@ -10,7 +10,8 @@ SCHEMA.project = {
     { k: 'status', label: 'Status', type: 'select', req: true, options: PROJECT_STATUS }, { k: 'owner', label: 'Owner' }, { k: 'vendor', label: 'Vendor' }, { k: 'quoteNo', label: 'Quote #' }, { k: 'poNo', label: 'PO #' }, { k: 'amount', label: 'Amount', type: 'number', min: 0 }, { k: 'fundingSource', label: 'Funding', type: 'select', options: fundingOptions }, { k: 'newModelId', label: 'Replacement model (optional)', type: 'select', options: () => DB.data.models.map(m => ({ v: m.id, l: m.name })), help: 'If set, the lab’s hardware lines switch to this model when the project completes' },
     { k: 'proposalId', label: 'Proposal', type: 'select', options: () => DB.data.proposals.map(p => ({ v: p.id, l: p.title })) },
     { k: 'quoteDate', label: 'Quote date', type: 'date' }, { k: 'poDate', label: 'PO date', type: 'date' }, { k: 'deliveryDate', label: 'Delivery date', type: 'date' }, { k: 'installStart', label: 'Install start', type: 'date' }, { k: 'installEnd', label: 'Install end', type: 'date' },
-    { k: 'docLinks', label: 'Links to quotes / PO / invoices (one per line)', type: 'textarea', wide: true }, { k: 'notes', label: 'Notes', type: 'textarea', wide: true }]
+    { k: 'quoteLink', label: 'Quote (link)' }, { k: 'poLink', label: 'PO (link)' }, { k: 'invoiceLink', label: 'Invoice (link)' },
+    { k: 'docLinks', label: 'Other links to quotes / PO / invoices (one per line)', type: 'textarea', wide: true }, { k: 'notes', label: 'Notes', type: 'textarea', wide: true }]
 };
 // Auto-create one project per lab that is overdue or due within the horizon. Ids are deterministic (auto-<lab>-<fy>) so two people
 // opening the tracker at once produce the same record, not duplicates. Deleted auto projects are remembered and not re-created.
@@ -32,7 +33,7 @@ VIEWS.projects = {
   render(el) {
     syncAutoProjects();
     const tab = UI.projTab || 'board', list = DB.data.projects, ac = autoCfg();
-    el.innerHTML = pageHead('Replacement projects', `<button class="btn primary edit-only" id="npj">${ic('plus')} New project</button>`) + `<div class="small muted edit-only" style="margin-bottom:10px"><label class="check"><input type="checkbox" id="ap-on"${ac.on ? ' checked' : ''}> Create projects automatically for labs that are overdue or due within</label> <input type="number" id="ap-m" min="1" max="60" value="${ac.months}" style="width:64px"> months. They appear here as Planned; move them along the board as the project progresses.</div>` + `<div class="tabs">${[['board', 'Board'], ['table', 'Table'], ['timeline', 'Install timeline']].map(([k, l]) => `<a data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</a>`).join('')}</div><div id="t"></div>`;
+    el.innerHTML = pageHead('Replacement projects', `<button class="btn primary edit-only" id="npj">${ic('plus')} New project</button>`) + `<div class="small muted edit-only" style="margin-bottom:10px"><label class="check"><input type="checkbox" id="ap-on"${ac.on ? ' checked' : ''}> Create projects automatically for labs that are overdue or due within</label> <input type="number" id="ap-m" min="1" max="60" value="${ac.months}" style="width:64px"> months. Install window: <input type="number" id="ap-d" min="1" max="60" value="${S().installDays || 10}" style="width:56px"> days, placed after delivery and outside blackout windows. They appear here as Planned; move them along the board as the project progresses.</div>` + `<div class="tabs">${[['board', 'Board'], ['table', 'Table'], ['timeline', 'Install timeline']].map(([k, l]) => `<a data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</a>`).join('')}</div><div id="t"></div>`;
     const host = $('#t', el), lab = p => p.labId ? labLabel(DB.get('labs', p.labId)) : '';
     const warn = p => { const b = blackoutHit(p); return b ? `<span class="badge bad" title="Install overlaps a blackout window">⚠ ${esc(b)}</span>` : ''; };
     if (tab === 'board') {
@@ -55,6 +56,7 @@ VIEWS.projects = {
       $('#tl-fy', host)?.addEventListener('change', e => { UI.projFY = +e.target.value; render(); });
     }
     $('#ap-on', el).onchange = e => { DB.setSetting('autoProjects', { ...autoCfg(), on: e.target.checked }); render(); };
+    $('#ap-d', el).onchange = e => { DB.setSetting('installDays', Math.max(1, +e.target.value || 10)); };
     $('#ap-m', el).onchange = e => { DB.setSetting('autoProjects', { ...autoCfg(), months: Math.max(1, +e.target.value || 12) }); render(); };
     el.onclick = e => {
       const t = e.target, tb = t.closest('[data-tab]'); if (tb) { UI.projTab = tb.dataset.tab; return render(); }

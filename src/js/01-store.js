@@ -137,6 +137,7 @@ const DB = {
   },
   put(t, rec) {
     if (this.readOnly) { toast('This session is read-only', 'err'); return rec; }
+    if (this.confirmOnly && t !== 'confirmations') { toast('Lab managers can only confirm their labs', 'err'); return rec; }
     if (!rec.id) rec.id = uid();
     this.snap(t, rec.id);
     rec._u = new Date().toISOString(); rec._b = this.user;
@@ -150,7 +151,7 @@ const DB = {
     return out;
   },
   remove(t, id) {
-    if (this.readOnly) { toast('This session is read-only', 'err'); return; }
+    if (this.readOnly || this.confirmOnly) { toast('This session can’t delete records', 'err'); return; }
     const cur = this.idx(t).get(id); if (!cur) return;
     this.snap(t, id);
     this.data[t].splice(this.data[t].indexOf(cur), 1); this.idx(t).delete(id);
@@ -332,5 +333,5 @@ function updateStatus() {
   }
   el.className = cls; $('#sync-t').textContent = txt;
   $('#btn-dl').hidden = !(s && s.kind === 'file');
-  document.body.classList.toggle('ro', !!DB.readOnly);
+  document.body.classList.toggle('ro', !!(DB.readOnly || DB.confirmOnly));
 }

@@ -517,6 +517,7 @@ const DB = {
   },
   put(t, rec) {
     if (this.readOnly) { toast('This session is read-only', 'err'); return rec; }
+    if (this.confirmOnly && t !== 'confirmations') { toast('Lab managers can only confirm their labs', 'err'); return rec; }
     if (!rec.id) rec.id = uid();
     this.snap(t, rec.id);
     rec._u = new Date().toISOString(); rec._b = this.user;
@@ -530,7 +531,7 @@ const DB = {
     return out;
   },
   remove(t, id) {
-    if (this.readOnly) { toast('This session is read-only', 'err'); return; }
+    if (this.readOnly || this.confirmOnly) { toast('This session can’t delete records', 'err'); return; }
     const cur = this.idx(t).get(id); if (!cur) return;
     this.snap(t, id);
     this.data[t].splice(this.data[t].indexOf(cur), 1); this.idx(t).delete(id);
@@ -712,7 +713,7 @@ function updateStatus() {
   }
   el.className = cls; $('#sync-t').textContent = txt;
   $('#btn-dl').hidden = !(s && s.kind === 'file');
-  document.body.classList.toggle('ro', !!DB.readOnly);
+  document.body.classList.toggle('ro', !!(DB.readOnly || DB.confirmOnly));
 }
 
 // ---- 02-model.js
@@ -1501,7 +1502,8 @@ const SCHEMA = {
     title: 'App user', table: 'users', defaults: () => ({ role: 'Editor', active: true }),
     fields: [
       { k: 'name', label: 'Name (shown in the change history)', req: true, help: 'Renaming does not rewrite past history entries' }, { k: 'email', label: 'Email', type: 'email' },
-      { k: 'role', label: 'Role', type: 'select', req: true, options: ['Admin', 'Editor', 'Viewer'], help: 'Viewers open the tracker read-only. Roles are a convenience, not security – anyone who can write to the share folder can edit the data file.' },
+      { k: 'role', label: 'Role', type: 'select', req: true, options: ['Admin', 'Editor', 'Lab manager', 'Viewer'], help: 'Lab managers see only the My labs page and can confirm devices and applications. Viewers open the tracker read-only. Roles are a convenience, not security – anyone who can write to the share folder can edit the data file.' },
+      { k: 'contactId', label: 'Linked contact', type: 'select', options: contactOptions, help: 'Used by My labs to find this person’s labs (otherwise matched by email)' },
       { k: 'active', label: 'Active', type: 'check', hint: 'Inactive users no longer appear in the “who are you?” list' },
       { k: 'notes', label: 'Notes', type: 'textarea', wide: true }],
     remove(rec) { if (rec.name === DB.user) { toast('You can’t remove the user you are signed in as', 'err'); return false; } DB.remove('users', rec.id); }
@@ -1559,7 +1561,7 @@ const NAV = [
   ['dashboard', 'Dashboard', 'home'],
   ['sep', 'Planning'], ['plan', 'Replacement plan', 'calendar'], ['planner', 'Budget planner', 'dollar'], ['proposals', 'Proposals', 'file'], ['projects', 'Replacement projects', 'tool'], ['techfee', 'Tech Fee projects', 'dollar'],
   ['sep', 'Assets'], ['labs', 'Labs', 'monitor'], ['hardware', 'Hardware', 'cpu'], ['devices', 'Devices', 'laptop'], ['models', 'Models & costs', 'tag'], ['audit', 'Labels & audits', 'tag'],
-  ['sep', 'Software & people'], ['software', 'Software', 'package'], ['contacts', 'Contacts', 'users'], ['users', 'App users', 'users'],
+  ['sep', 'Software & people'], ['software', 'Software', 'package'], ['contacts', 'Contacts', 'users'], ['mylabs', 'My labs', 'monitor'], ['users', 'App users', 'users'],
   ['sep', 'Operations'], ['maintenance', 'Maintenance', 'tool'], ['reports', 'Reports', 'trend'], ['charts', 'Charts', 'pie'],
   ['sep', 'Admin'], ['import', 'Import', 'upload'], ['settings', 'Settings & data', 'sliders']
 ];
@@ -1815,7 +1817,7 @@ VIEWS.lab = {
       maintenance: () => `<div class="card"><div class="card-h"><h3>Maintenance & repairs</h3><span class="spacer"></span><button class="btn sm primary edit-only" data-act="addm">${ic('plus')} Log maintenance</button></div>${maintTable(maint)}</div>`,
       history: () => `<div class="card"><div class="card-h"><h3>Change history</h3></div>${timelineHTML(labHistory(lab.id))}</div>`
     }[tab]();
-    el.innerHTML = pageHead(labLabel(lab), `<button class="btn edit-only" data-act="email">${ic('file')} Email contacts</button><button class="btn edit-only" data-act="edit">Edit lab</button><button class="btn primary edit-only" data-act="addhw">${ic('plus')} Add hardware</button>`, `<a href="#/labs">Labs</a> › ${esc(labLabel(lab))}`) + `
+    el.innerHTML = pageHead(labLabel(lab), `<a class="btn" href="#/labsheet/${lab.id}">${ic('file')} Lab sheet</a><button class="btn edit-only" data-act="email">${ic('file')} Email contacts</button><button class="btn edit-only" data-act="edit">Edit lab</button><button class="btn primary edit-only" data-act="addhw">${ic('plus')} Add hardware</button>`, `<a href="#/labs">Labs</a> › ${esc(labLabel(lab))}`) + `
     <div class="split"><div>
       <div class="card"><div class="card-h"><h3>Lab details</h3><span class="badge ${lab.status === 'Closed' ? '' : 'ok'} dot">${esc(lab.status || 'Active')}</span></div>
         <dl class="dl"><dt>Building</dt><dd>${esc(b?.name || '—')}</dd><dt>Room</dt><dd>${esc(lab.room)}</dd><dt>Department</dt><dd>${esc(lab.department || '—')}</dd><dt>Type</dt><dd>${esc(lab.type || '—')}</dd><dt>Seats</dt><dd>${lab.seats || '—'}</dd>
@@ -2538,12 +2540,14 @@ VIEWS.maintenance = {
   }
 };
 
+const REPORT_EXT = {};
 VIEWS.reports = {
   render(el) {
     const tab = UI.repTab || 'depreciation', t = todayStr();
-    el.innerHTML = pageHead('Reports') + `<div class="tabs">${[['depreciation', 'Depreciation'], ['drift', 'Software drift'], ['licenses', 'Licenses'], ['tco', 'Cost of ownership'], ['rightsize', 'Right-sizing'], ['trends', 'Usage trends'], ['surplus', 'Surplus & redeploy'], ['quality', 'Data quality'], ['calendar', 'Calendar export'], ['activity', 'Activity log'], ['ossupport', 'OS support'], ['funding', 'Funding'], ['expiring', 'Licenses & warranties'], ['health', 'Device health']].map(([k, l]) => `<a data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</a>`).join('')}</div><div id="t"></div>`;
+    el.innerHTML = pageHead('Reports') + `<div class="tabs">${[['depreciation', 'Depreciation'], ['drift', 'Software drift'], ['licenses', 'Licenses'], ['tco', 'Cost of ownership'], ['rightsize', 'Right-sizing'], ['trends', 'Usage trends'], ['surplus', 'Surplus & redeploy'], ['quality', 'Data quality'], ['calendar', 'Calendar export'], ['activity', 'Activity log'], ['ossupport', 'OS support'], ['funding', 'Funding'], ['expiring', 'Licenses & warranties'], ['health', 'Device health'], ['finance', 'Scenarios & rollover'], ['cleanup', 'Cleanup']].map(([k, l]) => `<a data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</a>`).join('')}</div><div id="t"></div>`;
     const host = $('#t', el);
-    if (tab === 'depreciation') {
+    if (REPORT_EXT[tab]) REPORT_EXT[tab](host);
+    else if (tab === 'depreciation') {
       const lines = DB.data.hardware.filter(isActiveLine);
       host.innerHTML = `<div class="kpis">${tile('', 'dollar', '', money(sum(lines, lineCost)), 'Purchase / replacement cost')}${tile('', 'trend', 'warnk', money(sum(lines, l => lineCost(l) - bookValue(l))), 'Depreciated to date')}${tile('', 'cpu', 'good', money(sum(lines, bookValue)), 'Current book value')}</div><p class="muted small">Straight-line over each line’s lifecycle (model or platform default), no salvage value, measured from the last replacement (or purchase) date.</p><div id="tt"></div>`;
       mountTable($('#tt', host), {
@@ -3412,7 +3416,8 @@ SCHEMA.project = {
     { k: 'status', label: 'Status', type: 'select', req: true, options: PROJECT_STATUS }, { k: 'owner', label: 'Owner' }, { k: 'vendor', label: 'Vendor' }, { k: 'quoteNo', label: 'Quote #' }, { k: 'poNo', label: 'PO #' }, { k: 'amount', label: 'Amount', type: 'number', min: 0 }, { k: 'fundingSource', label: 'Funding', type: 'select', options: fundingOptions }, { k: 'newModelId', label: 'Replacement model (optional)', type: 'select', options: () => DB.data.models.map(m => ({ v: m.id, l: m.name })), help: 'If set, the lab’s hardware lines switch to this model when the project completes' },
     { k: 'proposalId', label: 'Proposal', type: 'select', options: () => DB.data.proposals.map(p => ({ v: p.id, l: p.title })) },
     { k: 'quoteDate', label: 'Quote date', type: 'date' }, { k: 'poDate', label: 'PO date', type: 'date' }, { k: 'deliveryDate', label: 'Delivery date', type: 'date' }, { k: 'installStart', label: 'Install start', type: 'date' }, { k: 'installEnd', label: 'Install end', type: 'date' },
-    { k: 'docLinks', label: 'Links to quotes / PO / invoices (one per line)', type: 'textarea', wide: true }, { k: 'notes', label: 'Notes', type: 'textarea', wide: true }]
+    { k: 'quoteLink', label: 'Quote (link)' }, { k: 'poLink', label: 'PO (link)' }, { k: 'invoiceLink', label: 'Invoice (link)' },
+    { k: 'docLinks', label: 'Other links to quotes / PO / invoices (one per line)', type: 'textarea', wide: true }, { k: 'notes', label: 'Notes', type: 'textarea', wide: true }]
 };
 // Auto-create one project per lab that is overdue or due within the horizon. Ids are deterministic (auto-<lab>-<fy>) so two people
 // opening the tracker at once produce the same record, not duplicates. Deleted auto projects are remembered and not re-created.
@@ -3434,7 +3439,7 @@ VIEWS.projects = {
   render(el) {
     syncAutoProjects();
     const tab = UI.projTab || 'board', list = DB.data.projects, ac = autoCfg();
-    el.innerHTML = pageHead('Replacement projects', `<button class="btn primary edit-only" id="npj">${ic('plus')} New project</button>`) + `<div class="small muted edit-only" style="margin-bottom:10px"><label class="check"><input type="checkbox" id="ap-on"${ac.on ? ' checked' : ''}> Create projects automatically for labs that are overdue or due within</label> <input type="number" id="ap-m" min="1" max="60" value="${ac.months}" style="width:64px"> months. They appear here as Planned; move them along the board as the project progresses.</div>` + `<div class="tabs">${[['board', 'Board'], ['table', 'Table'], ['timeline', 'Install timeline']].map(([k, l]) => `<a data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</a>`).join('')}</div><div id="t"></div>`;
+    el.innerHTML = pageHead('Replacement projects', `<button class="btn primary edit-only" id="npj">${ic('plus')} New project</button>`) + `<div class="small muted edit-only" style="margin-bottom:10px"><label class="check"><input type="checkbox" id="ap-on"${ac.on ? ' checked' : ''}> Create projects automatically for labs that are overdue or due within</label> <input type="number" id="ap-m" min="1" max="60" value="${ac.months}" style="width:64px"> months. Install window: <input type="number" id="ap-d" min="1" max="60" value="${S().installDays || 10}" style="width:56px"> days, placed after delivery and outside blackout windows. They appear here as Planned; move them along the board as the project progresses.</div>` + `<div class="tabs">${[['board', 'Board'], ['table', 'Table'], ['timeline', 'Install timeline']].map(([k, l]) => `<a data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</a>`).join('')}</div><div id="t"></div>`;
     const host = $('#t', el), lab = p => p.labId ? labLabel(DB.get('labs', p.labId)) : '';
     const warn = p => { const b = blackoutHit(p); return b ? `<span class="badge bad" title="Install overlaps a blackout window">⚠ ${esc(b)}</span>` : ''; };
     if (tab === 'board') {
@@ -3457,6 +3462,7 @@ VIEWS.projects = {
       $('#tl-fy', host)?.addEventListener('change', e => { UI.projFY = +e.target.value; render(); });
     }
     $('#ap-on', el).onchange = e => { DB.setSetting('autoProjects', { ...autoCfg(), on: e.target.checked }); render(); };
+    $('#ap-d', el).onchange = e => { DB.setSetting('installDays', Math.max(1, +e.target.value || 10)); };
     $('#ap-m', el).onchange = e => { DB.setSetting('autoProjects', { ...autoCfg(), months: Math.max(1, +e.target.value || 12) }); render(); };
     el.onclick = e => {
       const t = e.target, tb = t.closest('[data-tab]'); if (tb) { UI.projTab = tb.dataset.tab; return render(); }
@@ -3783,7 +3789,7 @@ async function runHealthChecks() {
 }
 async function healthDialog() {
   const body = document.createElement('div'); body.innerHTML = '<p class="muted">Running checks…</p>';
-  modal({ title: 'Data safety health check', body, wide: true, buttons: [{ label: 'Close', cls: 'primary' }] });
+  modal({ title: 'Data safety health check', body, wide: true, buttons: [{ label: 'IT setup note', onClick: () => { download('lab-tracker-IT-note.txt', itNoteText(), 'text/plain'); return false; } }, { label: 'Two-computer save test…', onClick: () => { pilotDialog(); return false; } }, { label: 'Close', cls: 'primary' }] });
   const r = await runHealthChecks();
   body.innerHTML = `<table><thead><tr><th></th><th>Check</th><th>Result</th></tr></thead><tbody>${r.map(x => `<tr><td>${x.ok ? '<span class="badge ok">pass</span>' : x.warn ? '<span class="badge warn">warn</span>' : '<span class="badge bad">FAIL</span>'}</td><td>${esc(x.n)}</td><td class="small">${esc(x.d)}</td></tr>`).join('')}</tbody></table>
   <p class="small muted" style="margin-top:12px">Checks are done from this computer only. For a true multi-user test, run it from two computers, make edits on both at the same time, then run it again.</p>`;
@@ -4059,10 +4065,11 @@ const userByName = n => DB.data.users.find(u => String(u.name).trim().toLowerCas
 
 function setUser(u) {
   DB.user = u.name; try { localStorage.setItem('lt-user', u.name); } catch (e) { }
-  DB.readOnly = !!DB.storeRO || u.role === 'Viewer';
-  $('#btn-user').innerHTML = `<span class="avatar">${esc(initials(DB.user))}</span><span>${esc(DB.user)}${u.role === 'Viewer' ? ' (view only)' : ''}</span>`;
-  document.body.classList.toggle('ro', DB.readOnly);
+  DB.readOnly = !!DB.storeRO || u.role === 'Viewer'; DB.role = u.role; DB.confirmOnly = u.role === 'Lab manager';
+  $('#btn-user').innerHTML = `<span class="avatar">${esc(initials(DB.user))}</span><span>${esc(DB.user)}${u.role === 'Viewer' ? ' (view only)' : u.role === 'Lab manager' ? ' (lab manager)' : ''}</span>`;
+  document.body.classList.toggle('ro', DB.readOnly || DB.confirmOnly);
   updateStatus();
+  if (u.role === 'Lab manager' && !/^#\/(mylabs|labsheet)/.test(location.hash)) location.hash = '#/mylabs';
 }
 
 // Called after the data loads (and from the top-bar user button). Resolves when the person is identified.
@@ -4179,14 +4186,16 @@ function defaultBaselines() {
 
 let AUTOMATING = false;
 function syncAutoProjects() {
-  if (AUTOMATING || DB.readOnly || !DB.data.hardware.length) return;
+  if (AUTOMATING || DB.readOnly || DB.confirmOnly || !DB.data.hardware.length) return;
   AUTOMATING = true;
-  try { relinkDevices(true); createAutoProjects(); advanceProjects(); closeOutProjects(); defaultBaselines(); } finally { AUTOMATING = false; }
+  try { relinkDevices(true); createAutoProjects(); suggestInstallWindows(); advanceProjects(); closeOutProjects(); defaultBaselines(); } finally { AUTOMATING = false; }
 }
 
 // Extra lines for the dashboard "needs attention" list.
 function automationAlerts() {
   const t = todayStr(), a = [], open = DB.data.projects.filter(p => !['Complete', 'On hold'].includes(p.status || 'Planned'));
+  const noq = open.filter(p => p.poNo && !p.quoteLink && !/quote/i.test(p.docLinks || '')).length; if (noq) a.push(['', `${noq} project(s) have a PO number but no quote linked`, '#/projects']);
+  const noi = DB.data.projects.filter(p => (p.status === 'Complete') && !p.invoiceLink).length; if (noi) a.push(['', `${noi} completed project(s) have no invoice linked`, '#/projects']);
   const nd = open.filter(noticeDue).length; if (nd) a.push(['warn', `${nd} replacement project(s) have a lab whose contacts haven’t been emailed yet`, '#/projects']);
   const stalled = open.filter(p => (p.status || 'Planned') !== 'Planned' && p._u && daysBetween(p._u.slice(0, 10), t) > 45).length; if (stalled) a.push(['warn', `${stalled} project(s) haven’t been updated in over 45 days`, '#/projects']);
   const tf = DB.data.techProjects, due = tf.filter(x => x.reportDue && !x.reportSubmitted && x.reportDue <= addMonths(t, 1)).length; if (due) a.push(['warn', `${due} Tech Fee project report(s) are due within a month`, '#/techfee']);
@@ -4247,6 +4256,215 @@ VIEWS.techfee = {
       const mv = t.closest('[data-mv]'); if (mv) { const [id, d] = mv.dataset.mv.split('|'), p = DB.get('techProjects', id), i = TF_STATUS.indexOf(p.status); DB.put('techProjects', { ...p, status: TF_STATUS[Math.max(0, Math.min(TF_STATUS.length - 1, i + +d))] }); return render(); }
       const ed = t.closest('[data-e]'); if (ed) editEntity('techProject', ed.dataset.e);
     };
+  }
+};
+
+// ---- 29-pilot.js
+// Pilot tools for the shared folder: a note for IT, and a two-computer save test that proves the lock file stops lost updates.
+function itNoteText() {
+  const st = DB.store, nm = st.kind === 'folder' ? st.name : '(not in folder mode)';
+  return `Lab Asset Tracker - setup note for IT
+Generated ${new Date().toLocaleString()} by ${DB.user}
+
+WHAT IT IS
+A single HTML file (lab-tracker.html) with no server, installer or internet access needed. It reads and writes one data file in a shared folder.
+
+WHAT IT NEEDS
+1. A folder on the network share (this one is "${nm}") containing lab-tracker.html.
+2. Read AND write (create, modify, delete) permission on that folder for every person who edits. Read-only users can be given read permission only.
+3. Users open lab-tracker.html in Microsoft Edge or Google Chrome (the File System Access API is required for shared-folder saving) and choose the folder once. The browser asks for permission again after it restarts or after a long time; that is normal.
+4. The folder must be reachable as a normal path (mapped drive or UNC path such as \\\\server\\share\\LabTracker). SharePoint/OneDrive sync folders are not recommended: sync delays can cause conflicts.
+
+FILES CREATED IN THE FOLDER
+- lab-tracker-data.json       the database (the only file that matters)
+- lab-tracker.lock            short-lived lock while someone saves (deleted automatically; stale after 15 s)
+- backups\\                    one backup per day, the newest 60 are kept
+- imports\\                    optional: drop exports here (intune-devices.csv, mosyle-devices.csv, labstats-stations.csv, labstats-usage.csv, warranty.csv, installed-apps.csv)
+
+BACKUP AND RECOVERY
+Include the whole folder in your normal share backups. To restore, copy a file from backups\\ over lab-tracker-data.json while nobody is editing. The tracker also offers the newest backup automatically if it finds a damaged data file.
+
+LIMITS TO KNOW ABOUT
+- It is a shared file, not a database server. It is designed for roughly 5-10 people editing occasionally.
+- Anyone with write access to the folder can change or delete the data file or the HTML file. The in-app users and roles are for attribution, not security.
+- Saving merges changes field by field, so two people editing different things is safe; two people editing the same field at once is last-writer-wins.
+
+IF YOU NEED STRONGER GUARANTEES
+Move the data to a small server (SQLite or Postgres) with Entra ID sign-in. The storage code is isolated in src/js/01-store.js.
+`;
+}
+const PILOT_FILE = 'pilot-counter.json', pilotKey = () => `${DB.user} (${(UI.pilotId ??= uid().slice(0, 4))})`;
+async function pilotReadCounter(st) { try { return JSON.parse(await (await (await st.dir.getFileHandle(PILOT_FILE)).getFile()).text()); } catch { return { n: 0, by: {} }; } }
+async function pilotRun(st, rounds, tick) {
+  for (let i = 0; i < rounds; i++) {
+    await st.acquire();
+    try {
+      const c = await pilotReadCounter(st); c.n++; c.by[pilotKey()] = (c.by[pilotKey()] || 0) + 1;
+      const w = await (await st.dir.getFileHandle(PILOT_FILE, { create: true })).createWritable(); await w.write(JSON.stringify(c)); await w.close();
+    } finally { await st.release(); }
+    tick(i + 1); await new Promise(r => setTimeout(r, 100 + Math.random() * 200));
+  }
+}
+function pilotDialog() {
+  const st = DB.store; if (st.kind !== 'folder' || DB.readOnly) return toast('Open the shared folder with write access first', 'err');
+  const body = document.createElement('div');
+  body.innerHTML = `<p class="muted small">Proves that two people saving at the same moment don’t overwrite each other. Do this on <b>two computers at once</b>: both open the tracker on the shared folder, both open this test, then press <b>Run</b> on both within a few seconds. Each run makes 20 locked updates to a scratch file (<code>${PILOT_FILE}</code>, not your data). Afterwards press <b>Check result</b>.</p>
+    <p><button class="btn primary" id="p-run">Run</button> <button class="btn" id="p-chk">Check result</button> <button class="btn" id="p-clr">Delete test file</button></p><div id="p-out" class="small"></div>`;
+  const out = $('#p-out', body);
+  $('#p-run', body).onclick = async () => { try { await pilotRun(st, 20, n => { out.textContent = `Running… ${n}/20`; }); out.textContent = 'Done – now press Check result (after the other computer finishes too).'; } catch (e) { out.innerHTML = `<span class="badge bad">failed</span> ${esc(e.message)}`; } };
+  $('#p-chk', body).onclick = async () => {
+    const c = await pilotReadCounter(st), total = sum(Object.values(c.by), v => v), ok = c.n === total;
+    out.innerHTML = `<span class="badge ${ok ? 'ok' : 'bad'}">${ok ? 'pass' : 'LOST UPDATES'}</span> file counter ${c.n}, updates made ${total}${ok ? '' : ' – the lock did not protect writes on this share. Do not rely on multi-user saving here.'}<br>${Object.entries(c.by).map(([k, v]) => `${esc(k)}: ${v}`).join('<br>')}${Object.keys(c.by).length < 2 ? '<br><span class="muted">Only one computer has run so far – this proves little until two have.</span>' : ''}`;
+  };
+  $('#p-clr', body).onclick = async () => { try { await st.dir.removeEntry(PILOT_FILE); out.textContent = 'Test file deleted.'; } catch { out.textContent = 'Nothing to delete.'; } };
+  modal({ title: 'Two-computer save test', body, buttons: [{ label: 'Close', cls: 'primary' }] });
+}
+
+// ---- 30-mylabs.js
+// "My labs": what a lab manager sees – their labs, devices and applications – with one-click confirmation.
+function myContact() {
+  const u = userByName(DB.user); if (!u) return null;
+  return (u.contactId && DB.get('contacts', u.contactId)) || (u.email && DB.data.contacts.find(c => (c.email || '').toLowerCase() === u.email.toLowerCase())) || null;
+}
+VIEWS.mylabs = {
+  render(el) {
+    const ct = myContact(), isMgr = DB.role === 'Lab manager';
+    let labs = ct ? DB.data.labs.filter(l => l.status !== 'Closed' && contactsForLab(l).some(x => x.c.id === ct.id)) : [];
+    const showAll = !ct && !isMgr;
+    if (showAll) labs = DB.data.labs.filter(l => l.status !== 'Closed');
+    el.innerHTML = pageHead('My labs') + (ct ? `<p class="muted small">Labs linked to <b>${esc(ct.name)}</b>. Please check the devices and applications and press Confirm, or describe what needs changing.</p>` : showAll ? '<p class="muted small">Link your user to a contact (App users) to see only your own labs. Showing every lab.</p>' : '<div class="empty">Your user isn’t linked to a contact, so no labs can be shown. Ask an Admin to link it on the App users page.</div>');
+    labs.forEach(lab => {
+      const hw = DB.data.hardware.filter(l => l.labId === lab.id && isActiveLine(l)), sw = softwareForLab(lab.id), cf = ct && DB.data.confirmations.find(c => c.labId === lab.id && c.contactId === ct.id);
+      const d = document.createElement('div'); d.className = 'card';
+      d.innerHTML = `<div class="card-h"><h3><a href="#/lab/${lab.id}">${esc(labLabel(lab))}</a></h3><span class="spacer"></span>${cf ? `<span class="badge ${cf.status === 'Confirmed' ? 'ok' : 'warn'}">${esc(cf.status)}${cf.respondedDate ? ' ' + esc(fmtDate(cf.respondedDate)) : ''}</span>` : ''}</div>
+        <table><thead><tr><th>Devices</th><th class="num">Qty</th><th>OS</th><th>Planned replacement</th></tr></thead><tbody>${hw.map(l => `<tr><td>${esc(modelName(l))}</td><td class="num">${l.qty || ''}</td><td>${esc(l.os || '')}</td><td>${esc(fmtDate(plannedDate(l)))}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No devices recorded</td></tr>'}</tbody></table>
+        <p class="small" style="margin:10px 0 4px"><b>Applications</b></p><div class="chips">${sw.map(x => `<span class="badge">${esc(x.sw.name)}${x.ls.version ? ' ' + esc(x.ls.version) : ''}</span>`).join('') || '<span class="muted small">None recorded</span>'}</div>
+        ${ct ? `<div class="field" style="margin-top:12px"><label>Anything missing or wrong? (applications, versions, device counts)</label><textarea rows="2" data-note="${lab.id}">${esc(cf?.notes || '')}</textarea></div>
+        <p><button class="btn primary" data-ok="${lab.id}">Everything is correct</button> <button class="btn" data-chg="${lab.id}">Send changes</button></p>` : ''}`;
+      el.appendChild(d);
+    });
+    if (ct) el.onclick = e => {
+      const ok = e.target.closest('[data-ok]'), ch = e.target.closest('[data-chg]'), id = (ok || ch)?.dataset.ok || ch?.dataset.chg; if (!id) return;
+      const note = $(`[data-note="${id}"]`, el).value.trim(); if (ch && !note) return toast('Describe what needs to change first', 'err');
+      const ex = DB.data.confirmations.find(c => c.labId === id && c.contactId === ct.id);
+      DB.put('confirmations', { ...(ex || {}), labId: id, contactId: ct.id, status: ok ? 'Confirmed' : 'Changes requested', respondedDate: todayStr(), notes: note });
+      DB.log(`${DB.user} ${ok ? 'confirmed' : 'requested changes for'} ${labLabel(DB.get('labs', id))}`); toast('Thank you – recorded'); render();
+    };
+  }
+};
+
+// ---- 31-finance.js
+// Reports: saved lifecycle scenarios vs budget, and funding rollover (carry-forward of unspent money across fiscal years).
+REPORT_EXT.finance = host => {
+  const t = todayStr(), fy0 = fiscalYear(t), B = S().budgets || {}, fys = Array.from({ length: 6 }, (_, i) => fy0 + i), sc = S().scenarios || [];
+  const budgetFY = f => sum(Object.values(B['FY' + f] || {}), v => +v || 0);
+  const natural = (() => { const o = {}; DB.data.hardware.filter(isActiveLine).forEach(l => { const p = plannedDate(l); if (!p) return; const f = Math.max(fy0, fiscalYear(p)); o[f] = (o[f] || 0) + lineCost(l); }); return o; })();
+  const rows = [{ id: '', name: 'Current rules (per-model lifecycles)', data: natural }, ...sc.map(s => ({ id: s.id, name: `${s.name} – every ${s.years} yr`, data: lifecycleScenario(+s.years) }))];
+  // rollover per funding source, ascending fiscal years
+  const srcs = [...new Set([...(S().fundingSources || []), ...Object.values(B).flatMap(o => Object.keys(o || {}))])], carry = S().rollover !== false;
+  const yrs = [...new Set([fy0 - 1, ...Object.keys(B).map(k => +k.replace('FY', '')), ...DB.data.projects.map(p => +p.fy), ...DB.data.techProjects.map(p => +p.fy)].filter(Boolean))].sort(), R = [];
+  srcs.forEach(src => {
+    let cin = 0;
+    yrs.forEach(f => {
+      const bud = +(B['FY' + f] || {})[src] || 0;
+      const rp = DB.data.projects.filter(p => +p.fy === f && (p.fundingSource || 'Replacement budget') === src && p.status !== 'On hold');
+      const tp = src === 'Tech fee project' ? DB.data.techProjects.filter(p => +p.fy === f && !['Denied', 'Idea'].includes(p.status)) : [];
+      const committed = sum(rp, p => +p.amount || 0) + sum(tp, p => +p.awarded || 0), spent = sum(rp.filter(p => p.status === 'Complete'), p => +p.amount || 0) + sum(tp, p => +p.spent || 0);
+      if (!bud && !committed && !cin) return;
+      R.push({ src, f, cin, bud, committed, spent, cout: cin + bud - Math.max(committed, spent) }); cin = carry ? R[R.length - 1].cout : 0;
+    });
+  });
+  host.innerHTML = `<div class="card"><div class="card-h"><h3>Lifecycle scenarios vs. budget</h3></div><p class="small muted">Spend per fiscal year if devices were replaced at a different age (overdue items fall in the current year). Compared with the total budget you entered in the Budget planner.</p>
+    <table><thead><tr><th>Scenario</th>${fys.map(f => `<th class="num">FY${f}</th>`).join('')}<th></th></tr></thead><tbody>
+    <tr><td><b>Budget entered</b></td>${fys.map(f => `<td class="num">${budgetFY(f) ? money(budgetFY(f)) : '—'}</td>`).join('')}<td></td></tr>
+    ${rows.map(r => `<tr><td>${esc(r.name)}</td>${fys.map(f => { const v = r.data[f] || 0, b = budgetFY(f); return `<td class="num${b && v > b ? ' bad' : ''}" ${b && v > b ? 'style="color:var(--bad,#c0392b)"' : ''}>${money(v)}</td>`; }).join('')}<td>${r.id ? `<button class="btn sm edit-only" data-delsc="${r.id}">Remove</button>` : ''}</td></tr>`).join('')}</tbody></table>
+    <div class="toolbar edit-only" style="margin-top:10px"><div class="field"><label>Save a scenario</label><input id="sc-n" placeholder="e.g. Stretch to 5 years"></div><div class="field"><label>Years</label><input id="sc-y" type="number" min="1" max="12" value="5" style="width:70px"></div><button class="btn" id="sc-add">Save</button></div></div>
+    <div class="card"><div class="card-h"><h3>Funding rollover</h3><span class="spacer"></span><label class="check edit-only small"><input type="checkbox" id="ro-on"${carry ? ' checked' : ''}> Carry unspent money into the next year</label></div>
+    <p class="small muted">Budget (from the Budget planner) plus what carried in, minus the larger of committed and spent. Replacement projects count their amount; Tech Fee projects count awarded and spent.</p>
+    ${R.length ? `<table><thead><tr><th>Source</th><th>FY</th><th class="num">Carried in</th><th class="num">Budget</th><th class="num">Committed</th><th class="num">Spent</th><th class="num">Carried out</th></tr></thead><tbody>${R.map(r => `<tr><td>${esc(r.src)}</td><td>FY${r.f}</td><td class="num">${money(r.cin)}</td><td class="num">${money(r.bud)}</td><td class="num">${money(r.committed)}</td><td class="num">${money(r.spent)}</td><td class="num"${r.cout < 0 ? ' style="color:var(--bad,#c0392b)"' : ''}><b>${money(r.cout)}</b></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Enter budgets in the Budget planner, or add project amounts, to see rollover.</div>'}</div>`;
+  $('#sc-add', host).onclick = () => { const n = $('#sc-n', host).value.trim(), y = +$('#sc-y', host).value; if (!n || !y) return toast('Name and years needed', 'err'); DB.setSetting('scenarios', [...sc, { id: uid(), name: n, years: y }]); render(); };
+  $('#ro-on', host).onchange = e => { DB.setSetting('rollover', e.target.checked); render(); };
+  host.onclick = e => { const d = e.target.closest('[data-delsc]'); if (d) { DB.setSetting('scenarios', sc.filter(s => s.id !== d.dataset.delsc)); render(); } };
+};
+
+// ---- 32-cleanup.js
+// Reports: duplicate and orphan finder with one-click merge.
+const LAB_REFS = ['hardware', 'devices', 'labSoftware', 'projects', 'confirmations', 'maintenances', 'audits', 'proposals', 'techProjects'];
+function mergeLabs(keep, dup) {
+  LAB_REFS.forEach(t => DB.data[t].slice().forEach(r => {
+    if (r.labId === dup.id) DB.put(t, { ...r, labId: keep.id });
+    else if (Array.isArray(r.labIds) && r.labIds.includes(dup.id)) DB.put(t, { ...r, labIds: [...new Set(r.labIds.map(x => x === dup.id ? keep.id : x))] });
+  }));
+  const kw = [...new Set(`${keep.match || ''},${dup.match || ''}`.split(',').map(x => x.trim()).filter(Boolean))].join(', ');
+  DB.put('labs', { ...keep, match: kw, contactIds: [...new Set([...(keep.contactIds || []), ...(dup.contactIds || [])])], name: keep.name || dup.name, department: keep.department || dup.department, notes: [keep.notes, dup.notes].filter(Boolean).join('\n') });
+  DB.remove('labs', dup.id); DB.log(`Merged duplicate lab ${labLabel(dup)} into ${labLabel(keep)}`);
+}
+const normModel = n => String(n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+REPORT_EXT.cleanup = host => {
+  const D = DB.data, key = s => String(s || '').trim().toLowerCase(), groups = [];
+  const labG = group(D.labs, l => l.buildingId + '|' + key(l.room)), devG = group(D.devices.filter(d => d.serial), d => key(d.serial)), modG = group(D.models, m => normModel(m.name));
+  const cnt = (t, f, id) => D[t].filter(r => r[f] === id).length;
+  labG.forEach((v, k) => v.length > 1 && groups.push({ kind: 'lab', title: `Lab: ${labLabel(v[0])}`, items: v, detail: l => `${cnt('hardware', 'labId', l.id)} hardware lines, ${cnt('devices', 'labId', l.id)} devices`, score: l => cnt('hardware', 'labId', l.id) + cnt('devices', 'labId', l.id) }));
+  devG.forEach((v, k) => v.length > 1 && groups.push({ kind: 'dev', title: `Serial ${v[0].serial}`, items: v, detail: d => `${d.name || ''} · ${d.source || 'Manual'} · last seen ${d.lastCheckIn || '—'}`, score: d => Date.parse(d.lastCheckIn || '2000-01-01') || 0 }));
+  modG.forEach((v, k) => k && v.length > 1 && groups.push({ kind: 'model', title: `Model: ${v[0].name}`, items: v, detail: m => `${cnt('hardware', 'modelId', m.id)} hardware lines · ${m.manufacturer || ''}`, score: m => cnt('hardware', 'modelId', m.id) }));
+  const orph = [];
+  const hwBad = D.hardware.filter(h => !DB.get('labs', h.labId) || (h.modelId && !DB.get('models', h.modelId))); if (hwBad.length) orph.push({ t: 'hardware', label: 'Hardware lines pointing at a missing lab or model', ids: hwBad.map(x => x.id), act: 'Delete them' });
+  const lsBad = D.labSoftware.filter(x => !DB.get('labs', x.labId) || !DB.get('software', x.softwareId)); if (lsBad.length) orph.push({ t: 'labSoftware', label: 'Installed-software rows for a missing lab or title', ids: lsBad.map(x => x.id), act: 'Delete them' });
+  const dvBad = D.devices.filter(x => x.labId && !DB.get('labs', x.labId)); if (dvBad.length) orph.push({ t: 'devices', label: 'Devices assigned to a lab that no longer exists', ids: dvBad.map(x => x.id), act: 'Unassign them', clear: true });
+  const pjBad = D.projects.filter(x => x.labId && !DB.get('labs', x.labId)); if (pjBad.length) orph.push({ t: 'projects', label: 'Projects for a lab that no longer exists', ids: pjBad.map(x => x.id), act: 'Unlink them', clear: true });
+  host.innerHTML = `<p class="muted small">Duplicates are matched on building + room (labs), serial number (devices) and model name ignoring punctuation. Merging keeps the record with the most activity, moves everything onto it and deletes the other.</p>
+    ${groups.length ? groups.map((g, gi) => { const best = g.items.slice().sort((a, b) => g.score(b) - g.score(a))[0]; return `<div class="card"><div class="card-h"><h3>${esc(g.title)}</h3><span class="spacer"></span><button class="btn primary sm edit-only" data-merge="${gi}">Merge ${g.items.length} into one</button></div><table><tbody>${g.items.map(i => `<tr><td>${i === best ? '<span class="badge ok">keeps</span>' : ''}</td><td>${esc(g.kind === 'model' ? i.name : g.kind === 'dev' ? i.name : labLabel(i))}</td><td class="muted small">${esc(g.detail(i))}</td></tr>`).join('')}</tbody></table></div>`; }).join('') : '<div class="card"><div class="empty">No duplicate labs, devices or models found.</div></div>'}
+    ${orph.length ? `<div class="card"><div class="card-h"><h3>Orphaned records</h3></div><table><tbody>${orph.map((o, i) => `<tr><td>${o.ids.length} · ${esc(o.label)}</td><td><button class="btn sm edit-only" data-orph="${i}">${o.act}</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="card"><div class="empty">No orphaned records.</div></div>'}`;
+  host.onclick = e => {
+    const m = e.target.closest('[data-merge]'), o = e.target.closest('[data-orph]');
+    if (m) {
+      const g = groups[+m.dataset.merge], sorted = g.items.slice().sort((a, b) => g.score(b) - g.score(a)), keep = sorted[0];
+      if (!confirm(`Merge ${g.items.length} records into “${g.kind === 'lab' ? labLabel(keep) : keep.name}”? The others are deleted.`)) return;
+      sorted.slice(1).forEach(dup => {
+        if (g.kind === 'lab') mergeLabs(keep, dup);
+        else if (g.kind === 'dev') { const fill = {}; Object.keys(dup).forEach(k => { if (!/^_|^id$/.test(k) && (keep[k] === '' || keep[k] == null) && dup[k] !== '' && dup[k] != null) fill[k] = dup[k]; }); DB.put('devices', { ...keep, ...fill }); DB.remove('devices', dup.id); }
+        else { D.hardware.filter(h => h.modelId === dup.id).forEach(h => DB.put('hardware', { ...h, modelId: keep.id })); DB.remove('models', dup.id); }
+      });
+      DB.log(`Merged ${g.items.length} duplicate ${g.kind} records`); toast('Merged'); render();
+    }
+    if (o) { const x = orph[+o.dataset.orph]; x.ids.forEach(id => x.clear ? DB.put(x.t, { ...DB.get(x.t, id), labId: '' }) : DB.remove(x.t, id)); DB.log(`Cleaned up ${x.ids.length} orphaned ${x.t} records`); toast('Cleaned up'); render(); }
+  };
+};
+
+// ---- 33-install.js
+// Install windows: place an install window after delivery, outside the blackout dates, and a printable lab sheet.
+const addDays = (s, n) => { const x = parseD(s); x.setDate(x.getDate() + n); return ymd(x); };
+function suggestWindow(from, days) {
+  const bl = S().blackouts || []; let s = from;
+  for (let i = 0; i < 30; i++) {
+    const e = addDays(s, days - 1), hit = bl.find(b => s <= b.end && e >= b.start);
+    if (!hit) return [s, e]; s = nextDay(hit.end);
+  }
+  return [s, addDays(s, days - 1)];
+}
+function suggestInstallWindows() {
+  const t = todayStr(), days = +S().installDays || 10; let n = 0;
+  DB.data.projects.slice().forEach(p => {
+    if (p.installStart || !p.deliveryDate || ['Complete', 'On hold'].includes(p.status || 'Planned')) return;
+    const from = nextDay(p.deliveryDate < t ? t : p.deliveryDate), [s, e] = suggestWindow(from, days);
+    DB.put('projects', { ...p, installStart: s, installEnd: e, installSuggested: true }); n++;
+  });
+  if (n) DB.log(`Suggested install windows for ${n} project${n > 1 ? 's' : ''} (after delivery, outside blackout dates)`);
+}
+VIEWS.labsheet = {
+  render(el) {
+    const lab = DB.get('labs', route().param); if (!lab) { el.innerHTML = pageHead('Lab sheet') + '<div class="empty">Lab not found.</div>'; return; }
+    const hw = DB.data.hardware.filter(l => l.labId === lab.id && isActiveLine(l)), sw = softwareForLab(lab.id), devs = DB.data.devices.filter(d => d.labId === lab.id && devStatus(d) !== 'Archived'), cts = contactsForLab(lab);
+    const b = DB.get('buildings', lab.buildingId);
+    el.innerHTML = pageHead(`Lab sheet – ${labLabel(lab)}`, `<button class="btn primary" id="pr">Print</button>`, `<a href="#/labs">Labs</a> › <a href="#/lab/${lab.id}">${esc(labLabel(lab))}</a> › Sheet`) + `<div class="card">
+      <h2 style="margin:0">${esc(labLabel(lab))}</h2><p class="muted">${esc(b?.name || '')} · Room ${esc(lab.room || '')} · ${esc(lab.type || '')}${lab.department ? ' · ' + esc(lab.department) : ''}${lab.seats ? ' · ' + lab.seats + ' seats' : ''}</p>
+      <h3>Contacts</h3><p class="small">${cts.map(({ c, why }) => `${esc(c.name)}${c.role ? ' (' + esc(c.role) + ')' : ''}${c.email ? ' – ' + esc(c.email) : ''}`).join('<br>') || '—'}</p>
+      <h3>Hardware</h3><table><thead><tr><th>Model</th><th class="num">Qty</th><th>Specs</th><th>OS</th><th>Last replaced</th><th>Planned</th><th>Funding</th></tr></thead><tbody>${hw.map(l => `<tr><td>${esc(modelName(l))}</td><td class="num">${l.qty || ''}</td><td>${esc(modelSpec(DB.get('models', l.modelId)) || '')}</td><td>${esc(l.os || '')}</td><td>${esc(fmtDate(l.lastReplaced || l.purchaseDate))}</td><td>${esc(fmtDate(plannedDate(l)))}</td><td>${esc(l.fundingSource || '')}</td></tr>`).join('') || '<tr><td colspan="7">None</td></tr>'}</tbody></table>
+      <h3>Applications</h3><p class="small">${sw.map(x => esc(x.sw.name) + (x.ls.version ? ' ' + esc(x.ls.version) : '')).join(' · ') || '—'}</p>
+      <h3>Devices (${devs.length})</h3><table><thead><tr><th>Name</th><th>Serial</th><th>Asset tag</th><th>Model</th><th>Warranty ends</th><th>Verified ✓</th></tr></thead><tbody>${devs.map(d => `<tr><td>${esc(d.name || '')}</td><td>${esc(d.serial || '')}</td><td>${esc(d.assetTag || '')}</td><td>${esc(d.model || '')}</td><td>${esc(d.warrantyEnd ? fmtDate(d.warrantyEnd) : '')}</td><td>☐</td></tr>`).join('') || '<tr><td colspan="6">No individual devices recorded</td></tr>'}</tbody></table>
+      ${lab.notes ? `<h3>Notes</h3><p class="small">${esc(lab.notes)}</p>` : ''}
+      <p class="small muted" style="margin-top:24px">Printed ${esc(fmtDate(todayStr()))} by ${esc(DB.user)} · Checked by: ____________________ Date: ____________</p></div>`;
+    $('#pr', el).onclick = () => window.print();
   }
 };
 

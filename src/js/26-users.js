@@ -4,10 +4,11 @@ const userByName = n => DB.data.users.find(u => String(u.name).trim().toLowerCas
 
 function setUser(u) {
   DB.user = u.name; try { localStorage.setItem('lt-user', u.name); } catch (e) { }
-  DB.readOnly = !!DB.storeRO || u.role === 'Viewer';
-  $('#btn-user').innerHTML = `<span class="avatar">${esc(initials(DB.user))}</span><span>${esc(DB.user)}${u.role === 'Viewer' ? ' (view only)' : ''}</span>`;
-  document.body.classList.toggle('ro', DB.readOnly);
+  DB.readOnly = !!DB.storeRO || u.role === 'Viewer'; DB.role = u.role; DB.confirmOnly = u.role === 'Lab manager';
+  $('#btn-user').innerHTML = `<span class="avatar">${esc(initials(DB.user))}</span><span>${esc(DB.user)}${u.role === 'Viewer' ? ' (view only)' : u.role === 'Lab manager' ? ' (lab manager)' : ''}</span>`;
+  document.body.classList.toggle('ro', DB.readOnly || DB.confirmOnly);
   updateStatus();
+  if (u.role === 'Lab manager' && !/^#\/(mylabs|labsheet)/.test(location.hash)) location.hash = '#/mylabs';
 }
 
 // Called after the data loads (and from the top-bar user button). Resolves when the person is identified.
