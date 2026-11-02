@@ -57,7 +57,8 @@ VIEWS.dashboard = {
       warr && ['warn', `${warr} device warranty(ies) end within 90 days`, '#/reports'],
       stale && ['', `${stale} device(s) haven’t checked in for over ${S().staleDays} days`, '#/reports'],
       lowUtil && ['', `${lowUtil} lab(s) are under ${S().lowUtilPct}% utilization in LabStats – consider right-sizing before replacing`, '#/labs'],
-      noHw && ['', `${noHw} lab(s) have no hardware lines yet`, '#/labs']
+      noHw && ['', `${noHw} lab(s) have no hardware lines yet`, '#/labs'],
+      ...automationAlerts()
     ].filter(Boolean);
     const upcoming = lines.filter(l => plannedDate(l) && plannedDate(l) <= to).sort((a, b) => cmp(plannedDate(a), plannedDate(b))).slice(0, 8);
     const feed = activityRows().filter(r => r.a !== 'note').slice(0, 8);

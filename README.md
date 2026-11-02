@@ -122,3 +122,15 @@ Import > Lab list creates buildings and empty labs from a CSV (Building, Room, L
 
 ## Automatic replacement projects
 The Projects page creates a Planned project for every lab that is overdue or due within the horizon (default 12 months, adjustable or switchable off on that page). Amounts follow the replacement plan until you move the project past Planned. Projects use fixed ids per lab and fiscal year, so two people opening the tracker at once don't create duplicates; a deleted auto project isn't re-created.
+
+## Tech Fee: replacements vs projects
+- **Tech Fee replacement** = routine lifecycle refresh paid by the Tech Fee. Set the hardware line's planned funding to "Tech fee replacement"; it flows through the replacement plan, auto-created replacement projects and the funding reports.
+- **Tech Fee project** = a new initiative proposed for Tech Fee money. Tracked on the Tech Fee projects page (Idea > Proposal drafted > Submitted > Under review > Approved > Funded > In progress > Complete, or Denied / On hold) with requested / awarded / spent amounts, affected labs, decision and report-due dates.
+
+## Automation (runs on load, on remote changes and on the Projects page)
+- Replacement projects are created from the plan (see above).
+- Project status follows dates: quote > Quoting, PO # > PO issued, past delivery date > Delivered, past install start > Installing, past install end > Complete. It only moves forward and never touches "On hold".
+- When a project reaches Complete, the lab's due hardware lines are marked replaced (date = install end), history is kept, the PO and funding are copied, and the warranty date is cleared. An optional "Replacement model" on the project switches the lines to that model.
+- Board cards show notice status with a one-click email to the lab's contacts; the dashboard flags projects whose lab hasn't been emailed.
+- Devices are re-linked to labs by name automatically (hand-assigned devices are left alone); labs with no baseline get the only baseline for their platform.
+- The dashboard "needs attention" list adds stalled projects, Tech Fee reports due, proposals waiting on a decision, and devices missing a Lenovo/Apple warranty date.

@@ -7,7 +7,7 @@ SCHEMA.project = {
   title: 'Project', table: 'projects', wide: true, defaults: () => ({ status: 'Planned', fy: fiscalYear(todayStr()) }),
   fields: [
     { k: 'title', label: 'Title', req: true, wide: true }, { k: 'labId', label: 'Lab', type: 'select', options: labOptions }, { k: 'fy', label: 'Fiscal year', type: 'number' },
-    { k: 'status', label: 'Status', type: 'select', req: true, options: PROJECT_STATUS }, { k: 'owner', label: 'Owner' }, { k: 'vendor', label: 'Vendor' }, { k: 'quoteNo', label: 'Quote #' }, { k: 'poNo', label: 'PO #' }, { k: 'amount', label: 'Amount', type: 'number', min: 0 },
+    { k: 'status', label: 'Status', type: 'select', req: true, options: PROJECT_STATUS }, { k: 'owner', label: 'Owner' }, { k: 'vendor', label: 'Vendor' }, { k: 'quoteNo', label: 'Quote #' }, { k: 'poNo', label: 'PO #' }, { k: 'amount', label: 'Amount', type: 'number', min: 0 }, { k: 'fundingSource', label: 'Funding', type: 'select', options: fundingOptions }, { k: 'newModelId', label: 'Replacement model (optional)', type: 'select', options: () => DB.data.models.map(m => ({ v: m.id, l: m.name })), help: 'If set, the lab’s hardware lines switch to this model when the project completes' },
     { k: 'proposalId', label: 'Proposal', type: 'select', options: () => DB.data.proposals.map(p => ({ v: p.id, l: p.title })) },
     { k: 'quoteDate', label: 'Quote date', type: 'date' }, { k: 'poDate', label: 'PO date', type: 'date' }, { k: 'deliveryDate', label: 'Delivery date', type: 'date' }, { k: 'installStart', label: 'Install start', type: 'date' }, { k: 'installEnd', label: 'Install end', type: 'date' },
     { k: 'docLinks', label: 'Links to quotes / PO / invoices (one per line)', type: 'textarea', wide: true }, { k: 'notes', label: 'Notes', type: 'textarea', wide: true }]
@@ -15,14 +15,14 @@ SCHEMA.project = {
 // Auto-create one project per lab that is overdue or due within the horizon. Ids are deterministic (auto-<lab>-<fy>) so two people
 // opening the tracker at once produce the same record, not duplicates. Deleted auto projects are remembered and not re-created.
 const autoCfg = () => Object.assign({ on: true, months: 12, dismissed: [] }, S().autoProjects || {});
-function syncAutoProjects() {
+function createAutoProjects() {
   const c = autoCfg(); if (!c.on || DB.readOnly || !DB.data.hardware.length) return 0;
   const t = todayStr(), R = replacementPlan({ from: t, to: addMonths(t, +c.months || 12), overdue: true }); let n = 0, u = 0;
   R.labs.forEach(g => {
     const fy = fiscalYear(g.first < t ? t : g.first), id = `auto-${g.lab.id}-${fy}`, amount = Math.round(g.cost), cur = DB.get('projects', id);
     if (cur) { if (cur.auto && (cur.status || 'Planned') === 'Planned' && cur.amount !== amount) { DB.put('projects', { ...cur, amount }); u++; } return; }
     if ((c.dismissed || []).includes(id) || DB.data.projects.some(p => p.labId === g.lab.id && p.fy === fy)) return;
-    DB.put('projects', { id, auto: true, title: `${labLabel(g.lab)} replacement FY${fy}`, labId: g.lab.id, fy, status: 'Planned', amount, notes: 'Created automatically from the replacement plan.' }); n++;
+    DB.put('projects', { id, auto: true, title: `${labLabel(g.lab)} replacement FY${fy}`, labId: g.lab.id, fy, status: 'Planned', amount, fundingSource: plannedFundingOf(g.lines[0].line), notes: 'Created automatically from the replacement plan.' }); n++;
   });
   if (n) DB.log(`Auto-created ${n} replacement project${n > 1 ? 's' : ''} from the replacement plan`);
   return n + u;
@@ -36,14 +36,14 @@ VIEWS.projects = {
     const host = $('#t', el), lab = p => p.labId ? labLabel(DB.get('labs', p.labId)) : '';
     const warn = p => { const b = blackoutHit(p); return b ? `<span class="badge bad" title="Install overlaps a blackout window">⚠ ${esc(b)}</span>` : ''; };
     if (tab === 'board') {
-      host.innerHTML = `<div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);gap:12px;overflow:auto;padding-bottom:8px">${PROJECT_STATUS.map(s => { const ps = list.filter(p => (p.status || 'Planned') === s); return `<div><div class="small muted" style="margin-bottom:6px"><b>${s}</b> · ${ps.length}${ps.length ? ' · ' + money(sum(ps, p => +p.amount || 0)) : ''}</div>${ps.map(p => `<div class="card" style="padding:10px;margin-bottom:8px"><b data-e="${p.id}" style="cursor:pointer">${esc(p.title)}</b><div class="small muted">${esc(lab(p))}</div><div class="small">${p.amount ? money(p.amount) : ''} ${esc(p.vendor || '')}</div><div class="small muted">${p.installStart ? 'Install ' + fmtDate(p.installStart) + (p.installEnd ? ' – ' + fmtDate(p.installEnd) : '') : ''}</div>${warn(p)}<div class="chips edit-only" style="margin-top:6px"><button class="btn sm" data-mv="${p.id}|-1"${PROJECT_STATUS.indexOf(s) === 0 ? ' disabled' : ''}>‹</button><button class="btn sm" data-mv="${p.id}|1"${PROJECT_STATUS.indexOf(s) >= 6 ? ' disabled' : ''}>›</button></div></div>`).join('')}</div>`; }).join('')}</div>`;
+      host.innerHTML = `<div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);gap:12px;overflow:auto;padding-bottom:8px">${PROJECT_STATUS.map(s => { const ps = list.filter(p => (p.status || 'Planned') === s); return `<div><div class="small muted" style="margin-bottom:6px"><b>${s}</b> · ${ps.length}${ps.length ? ' · ' + money(sum(ps, p => +p.amount || 0)) : ''}</div>${ps.map(p => `<div class="card" style="padding:10px;margin-bottom:8px"><b data-e="${p.id}" style="cursor:pointer">${esc(p.title)}</b><div class="small muted">${esc(lab(p))}</div><div class="small">${p.amount ? money(p.amount) : ''} ${esc(p.vendor || '')}</div><div class="small muted">${p.installStart ? 'Install ' + fmtDate(p.installStart) + (p.installEnd ? ' – ' + fmtDate(p.installEnd) : '') : ''}</div>${warn(p)}${noticeBadge(p)}<div class="chips edit-only" style="margin-top:6px"><button class="btn sm" data-notify="${p.id}" title="Email this lab’s contacts">✉</button><button class="btn sm" data-mv="${p.id}|-1"${PROJECT_STATUS.indexOf(s) === 0 ? ' disabled' : ''}>‹</button><button class="btn sm" data-mv="${p.id}|1"${PROJECT_STATUS.indexOf(s) >= 6 ? ' disabled' : ''}>›</button></div></div>`).join('')}</div>`; }).join('')}</div>`;
     } else if (tab === 'table') {
       mountTable(host, {
         id: 'projects', csvName: 'projects', rows: () => list, rowId: r => r.id, onRow: id => editEntity('project', id), defaultSort: { k: 'inst', dir: 'asc' },
         filters: [{ k: 's', label: 'Status', options: () => PROJECT_STATUS, test: (r, v) => (r.status || 'Planned') === v }, { k: 'fy', label: 'FY', options: () => [...new Set(list.map(p => String(p.fy || '')))].filter(Boolean), test: (r, v) => String(r.fy) === v }],
         cols: [{ k: 'title', label: 'Project', val: r => r.title }, { k: 'lab', label: 'Lab', val: lab }, { k: 'fy', label: 'FY', val: r => r.fy || 0, html: r => r.fy ? 'FY' + r.fy : '' }, { k: 'st', label: 'Status', val: r => r.status, html: r => `<span class="badge acc">${esc(r.status || 'Planned')}</span>` },
         { k: 'vendor', label: 'Vendor', val: r => r.vendor }, { k: 'po', label: 'PO', val: r => r.poNo }, { k: 'amt', label: 'Amount', val: r => +r.amount || 0, html: r => money(r.amount), num: true },
-        { k: 'inst', label: 'Install', val: r => r.installStart || '', html: r => r.installStart ? fmtDate(r.installStart) + (r.installEnd ? ' – ' + fmtDate(r.installEnd) : '') + ' ' + warn(r) : '—' }, { k: 'own', label: 'Owner', val: r => r.owner }]
+        { k: 'inst', label: 'Install', val: r => r.installStart || '', html: r => r.installStart ? fmtDate(r.installStart) + (r.installEnd ? ' – ' + fmtDate(r.installEnd) : '') + ' ' + warn(r) : '—' }, { k: 'fund', label: 'Funding', val: r => r.fundingSource || '' }, { k: 'notice', label: 'Notice', val: r => noticeState(r).label }, { k: 'own', label: 'Owner', val: r => r.owner }]
       });
     } else {
       const fy = UI.projFY || fiscalYear(todayStr()), [s, e] = fyRange(fy), months = Array.from({ length: 12 }, (_, i) => addMonths(s, i)), ps = list.filter(p => p.installStart && p.installStart <= e && (p.installEnd || p.installStart) >= s);
@@ -59,6 +59,7 @@ VIEWS.projects = {
     el.onclick = e => {
       const t = e.target, tb = t.closest('[data-tab]'); if (tb) { UI.projTab = tb.dataset.tab; return render(); }
       const mv = t.closest('[data-mv]'); if (mv) { const [id, d] = mv.dataset.mv.split('|'), p = DB.get('projects', id), i = PROJECT_STATUS.indexOf(p.status || 'Planned'); DB.put('projects', { ...p, status: PROJECT_STATUS[Math.max(0, Math.min(6, i + +d))] }); return render(); }
+      const nt = t.closest('[data-notify]'); if (nt) { const p = DB.get('projects', nt.dataset.notify), lb = DB.get('labs', p.labId); if (lb) composeNotice([lb], contactsForLab(lb).map(x => x.c)); return; }
       const ed = t.closest('[data-e]'); if (ed) editEntity('project', ed.dataset.e);
       if (t.closest('#npj')) editEntity('project');
     };

@@ -177,14 +177,14 @@ function buildLabMatcher() {
   const f = d => resolve(d).lab; f.full = resolve;
   return f;
 }
-function relinkDevices() {
+function relinkDevices(quiet) {
   const m = buildLabMatcher(); let n = 0;
   DB.data.devices.slice().forEach(d => {
     if (d.labLocked) return;
     const lab = m({ name: d.name, location: d.location, tags: d.tags || d.group });
     if (lab && lab.id !== d.labId) { DB.put('devices', { ...d, labId: lab.id }); n++; }
   });
-  DB.log(`Re-linked ${n} devices to labs by name`); return n;
+  if (n || !quiet) DB.log(`Re-linked ${n} devices to labs by name`); return n;
 }
 
 
@@ -208,6 +208,7 @@ function recName(t, r) {
   if (!r) return '';
   switch (t) {
     case 'labs': return labLabel(r);
+    case 'techProjects': return r.title || 'Tech fee project';
     case 'hardware': return `${modelName(r)} × ${r.qty} @ ${labLabel(DB.get('labs', r.labId))}`;
     case 'labSoftware': return `${DB.get('software', r.softwareId)?.name || 'software'} @ ${labLabel(DB.get('labs', r.labId))}`;
     case 'maintenances': return r.title;
@@ -218,7 +219,7 @@ function recName(t, r) {
     default: return r.name || r.id;
   }
 }
-const TABLE_LABEL = { labs: 'Lab', hardware: 'Hardware line', devices: 'Device', models: 'Model', software: 'Software', contacts: 'Contact', buildings: 'Building', labSoftware: 'Lab software', maintenances: 'Maintenance', charts: 'Pinned chart', proposals: 'Proposal', projects: 'Project', confirmations: 'Confirmation', baselines: 'Baseline', audits: 'Audit', users: 'User' };
+const TABLE_LABEL = { labs: 'Lab', hardware: 'Hardware line', devices: 'Device', models: 'Model', software: 'Software', contacts: 'Contact', buildings: 'Building', labSoftware: 'Lab software', maintenances: 'Maintenance', charts: 'Pinned chart', proposals: 'Proposal', projects: 'Project', confirmations: 'Confirmation', baselines: 'Baseline', audits: 'Audit', users: 'User', techProjects: 'Tech fee project' };
 const recHref = (t, id) => t === 'labs' ? `#/lab/${id}` : t === 'devices' ? `#/device/${id}` : '';
 // Flatten the audit log into one row per affected record.
 function activityRows(filter) {

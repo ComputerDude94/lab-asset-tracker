@@ -1,11 +1,11 @@
 // Data layer: one JSON file in a shared folder, merged record-by-record so several people can edit at once.
 const DATA_FILE = 'lab-tracker-data.json';
 const LOCK_FILE = 'lab-tracker.lock';
-const TABLES = ['buildings', 'labs', 'models', 'hardware', 'devices', 'software', 'labSoftware', 'contacts', 'charts', 'maintenances', 'proposals', 'projects', 'confirmations', 'baselines', 'audits', 'users'];
+const TABLES = ['buildings', 'labs', 'models', 'hardware', 'devices', 'software', 'labSoftware', 'contacts', 'charts', 'maintenances', 'proposals', 'projects', 'confirmations', 'baselines', 'audits', 'users', 'techProjects'];
 const DEFAULT_SETTINGS = { orgName: '', fyStartMonth: 7, lifecycle: { Windows: 4, Mac: 4, Other: 4 }, warnMonths: 12, staleDays: 60, licenseWarnDays: 90, currency: 'USD', lowUtilPct: 25, namePatterns: [], assetTagPrefix: 'LAB-', theme: 'wcu', selfAddUsers: true, autoProjects: { on: true, months: 12, dismissed: [] },
   autoImport: { mode: 'ask', seen: {} }, osSupport: [{ match: 'Windows 10', ends: '2025-10-14' }], budgets: {}, blackouts: [], targetUtil: 70,
   proposalTemplate: { intro: 'This request seeks funding to replace aging computers in the labs listed below. These labs support instruction and independent student work, and the equipment has reached or passed its planned service life.', risk: 'Deferring replacement increases the risk of hardware failure during the term, unsupported operating systems and software, loss of manufacturer warranty coverage, and rising repair costs and downtime.' },
-  fundingSources: ['Replacement budget', 'Tech fee project', 'Grant', 'Department funds', 'Donation', 'Other'],
+  fundingSources: ['Replacement budget', 'Tech fee replacement', 'Tech fee project', 'Grant', 'Department funds', 'Donation', 'Other'],
   emailTemplate: {
     subject: 'Action needed: {lab} is due for replacement ({date})',
     intro: 'Hello {name},\n\nThe computers in {lab} are scheduled for replacement around {date}. So we can plan the new setup and imaging, please review the details below and reply by {deadline} to:\n  1. Confirm the application list and the version of each title that must be installed.\n  2. Tell us about any applications to add, remove or upgrade, and any licensing or compatibility concerns.\n  3. Confirm the details of the devices (quantity, specifications, peripherals, special configurations).',
@@ -20,6 +20,7 @@ function emptyData() {
 function normalizeData(d) {
   const out = Object.assign(emptyData(), d);
   out.settings = Object.assign(clone(DEFAULT_SETTINGS), d.settings || {});
+  const fs = out.settings.fundingSources; if (Array.isArray(fs) && fs.includes('Tech fee project') && !fs.includes('Tech fee replacement')) fs.splice(fs.indexOf('Tech fee project'), 0, 'Tech fee replacement');
   out.settings.lifecycle = Object.assign({}, DEFAULT_SETTINGS.lifecycle, out.settings.lifecycle || {});
   TABLES.forEach(t => { if (!Array.isArray(out[t])) out[t] = []; });
   if (!Array.isArray(out.audit)) out.audit = [];
