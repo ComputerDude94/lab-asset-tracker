@@ -78,7 +78,8 @@ function initChrome() {
   $('#create-menu').innerHTML = `<div class="dh">Create new</div>` + [['lab', 'monitor', 'Lab'], ['hardware', 'cpu', 'Hardware line'], ['device', 'laptop', 'Device'], ['model', 'tag', 'Model'], ['software', 'package', 'Software'], ['contact', 'users', 'Contact'], ['maintenance', 'tool', 'Maintenance'], ['building', 'building', 'Building']]
     .map(([k, i, l]) => `<button data-create="${k}">${ic(i)} ${l}</button>`).join('');
   $('#btn-mode').onclick = cycleMode;
-  $('#btn-menu').onclick = () => document.body.classList.toggle(innerWidth <= 900 ? 'nav-open' : 'nav-collapsed');
+  setTimeout(() => { if (lsGet('lt-rail') === '1' && innerWidth > 900) document.body.classList.add('nav-collapsed'); });
+  $('#btn-menu').onclick = () => { if (innerWidth <= 900) return document.body.classList.toggle('nav-open'); lsSet('lt-rail', document.body.classList.toggle('nav-collapsed') ? '1' : ''); };
   document.addEventListener('click', e => {
     const t = e.target, dd = t.closest('.dd');
     $$('.dd.open').forEach(x => { if (x !== dd) x.classList.remove('open'); });

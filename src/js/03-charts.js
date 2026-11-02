@@ -31,7 +31,7 @@ function barSVG(spec, horiz) {
   const stacked = multi && spec.stacked !== false;
   const totals = labels.map((_, i) => stacked ? sum(series, s => s.values[i] || 0) : Math.max(...series.map(s => s.values[i] || 0)));
   const sc = niceScale(Math.max(...totals));
-  const W = 760; let out = '';
+  const W = spec.w || 760; let out = '';
   const leg = multi ? legendSVG(series.map(s => s.name), W, 12, 16) : { svg: '', h: 0 };
   const tip = (i, s) => `${labels[i]}${multi ? ' · ' + s.name : ''}: ${fmtFull(s.values[i], money)}`;
   if (!horiz) {
@@ -61,14 +61,14 @@ function barSVG(spec, horiz) {
       out += rot ? `<text transform="translate(${cx + 4},${ty - 2}) rotate(-38)" text-anchor="end" font-size="11" fill="var(--muted)">${esc(trunc(lb, 22))}</text>` : `<text x="${cx}" y="${ty}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(trunc(lb, 16))}</text>`;
     });
     out += `<line x1="${m.l}" x2="${W - m.r}" y1="${m.t + ih}" y2="${m.t + ih}" stroke="var(--muted)"/>`;
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title || 'Bar chart')}">${out}</svg>`;
+    return `<svg class="bv" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title || 'Bar chart')}">${out}</svg>`;
   }
-  const rowH = 28, m = { l: 180, r: 56, t: 10 + leg.h, b: 28 }, H = m.t + m.b + n * rowH, iw = W - m.l - m.r;
+  const rowH = 28, m = { l: W < 600 ? 112 : 180, r: 56, t: 10 + leg.h, b: 28 }, H = m.t + m.b + n * rowH, iw = W - m.l - m.r;
   out += leg.svg;
   sc.ticks.forEach(t => { const x = m.l + t / sc.max * iw; out += `<line y1="${m.t}" y2="${H - m.b}" x1="${x}" x2="${x}" stroke="var(--border)"/><text x="${x}" y="${H - m.b + 16}" text-anchor="middle" font-size="11" fill="var(--muted)">${fmtVal(t, money)}</text>`; });
   labels.forEach((lb, i) => {
     const y = m.t + i * rowH, bh = rowH - 8;
-    out += `<text x="${m.l - 8}" y="${y + rowH / 2 + 1}" text-anchor="end" font-size="11" fill="var(--text)">${esc(trunc(lb, 24))}</text>`;
+    out += `<text x="${m.l - 8}" y="${y + rowH / 2 + 1}" text-anchor="end" font-size="11" fill="var(--text)">${esc(trunc(lb, W < 600 ? 16 : 24))}</text>`;
     let acc = 0;
     series.forEach((s, si) => {
       const v = s.values[i] || 0; if (!v) return;
@@ -79,7 +79,7 @@ function barSVG(spec, horiz) {
     });
     if (totals[i]) out += `<text x="${m.l + totals[i] / sc.max * iw + 6}" y="${y + rowH / 2 + 1}" font-size="11" fill="var(--text)">${fmtVal(totals[i], money)}</text>`;
   });
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title || 'Bar chart')}">${out}</svg>`;
+  return `<svg class="bh" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title || 'Bar chart')}">${out}</svg>`;
 }
 
 function lineSVG(spec) {
@@ -106,8 +106,8 @@ function lineSVG(spec) {
 }
 
 function donutSVG(spec) {
-  const { labels, money } = spec, vals = spec.series[0].values, total = sum(vals), W = 760, H = Math.max(300, 40 + labels.length * 24);
-  const cx = 170, cy = H / 2, r1 = 130, r0 = 76;
+  const { labels, money } = spec, vals = spec.series[0].values, total = sum(vals), cp = !!spec.compact, W = cp ? 300 : 760, H = cp ? 250 + labels.length * 20 : Math.max(300, 40 + labels.length * 24);
+  const cx = cp ? 150 : 170, cy = cp ? 112 : H / 2, r1 = cp ? 96 : 130, r0 = cp ? 58 : 76;
   let a = -Math.PI / 2, out = '';
   const P = (r, t) => [cx + r * Math.cos(t), cy + r * Math.sin(t)];
   labels.forEach((lb, i) => {
@@ -118,9 +118,10 @@ function donutSVG(spec) {
     a += da;
   });
   out += `<text x="${cx}" y="${cy - 2}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--text)">${fmtVal(total, money)}</text><text x="${cx}" y="${cy + 18}" text-anchor="middle" font-size="12" fill="var(--muted)">${esc(spec.metricLabel || 'total')}</text>`;
-  const ly = (H - labels.length * 24) / 2 + 14;
+  const ly = cp ? 240 : (H - labels.length * 24) / 2 + 14;
   labels.forEach((lb, i) => {
-    const y = ly + i * 24;
+    const y = ly + i * (cp ? 20 : 24);
+    if (cp) { out += `<rect x="14" y="${y - 10}" width="11" height="11" rx="2" fill="${seriesColor(lb, i)}"/><text x="32" y="${y}" font-size="12" fill="var(--text)">${esc(trunc(lb, 20))}</text><text x="${W - 14}" y="${y}" text-anchor="end" font-size="12" fill="var(--muted)">${fmtFull(vals[i], money)} · ${total ? (vals[i] / total * 100).toFixed(0) : 0}%</text>`; return; }
     out += `<rect x="360" y="${y - 10}" width="11" height="11" rx="2" fill="${seriesColor(lb, i)}"/><text x="379" y="${y}" font-size="12" fill="var(--text)">${esc(trunc(lb, 34))}</text><text x="${W - 14}" y="${y}" text-anchor="end" font-size="12" fill="var(--muted)">${fmtFull(vals[i], money)} · ${total ? (vals[i] / total * 100).toFixed(0) : 0}%</text>`;
   });
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title || 'Donut chart')}">${out}</svg>`;

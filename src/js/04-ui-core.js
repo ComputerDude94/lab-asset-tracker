@@ -233,23 +233,45 @@ function editEntity(kind, id, defaults = {}, after) {
 // ---------- router ----------
 const VIEWS = {};
 const NAV = [
-  ['dashboard', 'Dashboard', 'home'],
+  ['dashboard', 'Dashboard', 'home'], ['exec', 'Executive summary', 'trend'],
   ['sep', 'Planning'], ['plan', 'Replacement plan', 'calendar'], ['planner', 'Budget planner', 'dollar'], ['proposals', 'Proposals', 'file'], ['projects', 'Replacement projects', 'tool'], ['techfee', 'Tech Fee projects', 'dollar'],
-  ['sep', 'Assets'], ['labs', 'Labs', 'monitor'], ['hardware', 'Hardware', 'cpu'], ['devices', 'Devices', 'laptop'], ['models', 'Models & costs', 'tag'], ['audit', 'Labels & audits', 'tag'],
+  ['sep', 'Assets'], ['assets', 'Asset overview', 'pie'], ['labs', 'Labs', 'monitor'], ['hardware', 'Hardware', 'cpu'], ['devices', 'Devices', 'laptop'], ['models', 'Models & costs', 'tag'], ['audit', 'Labels & audits', 'tag'],
   ['sep', 'Software & people'], ['software', 'Software', 'package'], ['contacts', 'Contacts', 'users'], ['mylabs', 'My labs', 'monitor'], ['users', 'App users', 'users'],
   ['sep', 'Operations'], ['maintenance', 'Maintenance', 'tool'], ['reports', 'Reports', 'trend'], ['charts', 'Charts', 'pie'],
   ['sep', 'Admin'], ['import', 'Import', 'upload'], ['settings', 'Settings & data', 'sliders']
 ];
 const NAV_COUNT = { labs: () => DB.data.labs.length, devices: () => DB.data.devices.length };
+// ---- collapsible sidebar groups (state is a per-browser convenience) ----
+const navClosed = () => { try { return JSON.parse(lsGet('lt-navc') || '[]'); } catch { return []; } };
+const navActive = (k, name) => name === k || (name === 'lab' && k === 'labs') || (name === 'device' && k === 'devices') || (name === 'proposal' && k === 'proposals');
+function renderNav(name) {
+  const groups = []; NAV.forEach(([k, l, i]) => { if (k === 'sep') groups.push({ title: l, items: [] }); else { if (!groups.length) groups.push({ title: '', items: [] }); groups[groups.length - 1].items.push([k, l, i]); } });
+  const closed = navClosed();
+  $('#nav').innerHTML = `<div class="nav-tools"><button data-navall="close">Collapse all</button><button data-navall="open">Expand all</button></div>` + groups.map(g => {
+    const act = g.items.some(([k]) => navActive(k, name)), shut = g.title && closed.includes(g.title) && !act;
+    const links = g.items.map(([k, l, i]) => `<a href="#/${k}" title="${l}" class="${navActive(k, name) ? 'on' : ''}">${ic(i)}<span>${l}</span>${NAV_COUNT[k] ? `<span class="cnt">${fmtNum(NAV_COUNT[k]())}</span>` : ''}</a>`).join('');
+    return g.title ? `<div class="navg${shut ? ' shut' : ''}" data-g="${esc(g.title)}"><button class="sep navg-h" aria-expanded="${!shut}"><span>${esc(g.title)}</span>${ic('down')}</button><div class="navg-body"><div>${links}</div></div></div>` : links;
+  }).join('');
+}
+document.addEventListener('click', e => {
+  const h = e.target.closest?.('.navg-h'), all = e.target.closest?.('[data-navall]');
+  if (!h && !all) return;
+  const titles = [...document.querySelectorAll('#nav .navg')].map(x => x.dataset.g);
+  let c = navClosed();
+  if (h) { const g = h.parentElement.dataset.g; c = c.includes(g) ? c.filter(x => x !== g) : [...c, g]; }
+  else c = all.dataset.navall === 'close' ? titles : [];
+  lsSet('lt-navc', c.length ? JSON.stringify(c) : '');
+  document.querySelectorAll('#nav .navg').forEach(x => { const s = c.includes(x.dataset.g); x.classList.toggle('shut', s); x.querySelector('.navg-h').setAttribute('aria-expanded', !s); });
+});
 function route() { const [, name = 'dashboard', param] = location.hash.split('/'); return { name, param: param ? decodeURIComponent(param) : '' }; }
 function render() {
   if (UI.modal) { UI.needsRender = true; return; }
   applyTheme();
   const { name, param } = route(), v = VIEWS[name === 'lab' ? 'lab' : name] || VIEWS.dashboard;
-  $('#nav').innerHTML = NAV.map(([k, l, i]) => k === 'sep' ? `<div class="sep">${l}</div>` : `<a href="#/${k}" title="${l}" class="${(name === k || (name === 'lab' && k === 'labs') || (name === 'device' && k === 'devices') || (name === 'proposal' && k === 'proposals')) ? 'on' : ''}">${ic(i)}<span>${l}</span>${NAV_COUNT[k] ? `<span class="cnt">${fmtNum(NAV_COUNT[k]())}</span>` : ''}</a>`).join('');
+  renderNav(name);
   $('#org').textContent = DB.data.settings.orgName || '';
   const el = $('#view'); el.innerHTML = '';
-  try { v.render(el, param); mountCharts(el); } catch (e) { console.error(e); el.innerHTML = `<div class="card"><h2>Something went wrong drawing this page</h2><pre>${esc(e.stack || e.message)}</pre></div>`; }
+  try { v.render(el, param); mountCharts(el); bindLayout(el); countUps(el); } catch (e) { console.error(e); el.innerHTML = `<div class="card"><h2>Something went wrong drawing this page</h2><pre>${esc(e.stack || e.message)}</pre></div>`; }
   updateStatus();
 }
 window.addEventListener('hashchange', () => { window.scrollTo(0, 0); render(); });

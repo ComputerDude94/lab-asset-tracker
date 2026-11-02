@@ -62,8 +62,8 @@ VIEWS.dashboard = {
     ].filter(Boolean);
     const upcoming = lines.filter(l => plannedDate(l) && plannedDate(l) <= to).sort((a, b) => cmp(plannedDate(a), plannedDate(b))).slice(0, 8);
     const feed = activityRows().filter(r => r.a !== 'note').slice(0, 8);
-    el.innerHTML = pageHead('Dashboard', '', 'Dashboard') + `
-    <div class="kpis">
+    const secs = [
+      { id: 'kpis', title: 'Key figures', html: `<div class="kpis">
       ${tile('#/labs', 'monitor', '', fmtNum(d.labs.length), 'Labs', `${d.buildings.length} buildings`)}
       ${tile('#/devices', 'laptop', 'infok', fmtNum(d.devices.length), 'Managed devices', `${fmtNum(sum(lines, l => +l.qty || 0))} in inventory`)}
       ${tile('#/plan', 'alert', over.length ? 'bad' : 'good', fmtNum(sum(over, l => +l.qty || 0)), 'Overdue devices', `${money(sum(over, lineCost))} to replace`)}
@@ -72,18 +72,20 @@ VIEWS.dashboard = {
       ${tile('#/software', 'package', '', fmtNum(d.software.length), 'Software titles', `${money(sum(d.software, s => +s.annualCost || 0))} / yr`)}
       ${tile('#/maintenance', 'tool', openM ? 'warnk' : '', fmtNum(openM), 'Open maintenance', `${money(sum(d.maintenances, m => +m.cost || 0))} total spend`)}
       ${tile('#/contacts', 'users', '', fmtNum(d.contacts.length), 'Contacts')}
-    </div>
-    <div class="grid g2">${chartCard('Planned replacement spend by fiscal year', presetCfg('Planned replacement spend by fiscal year').cfg)}${chartCard('Replacement status', presetCfg('Replacement status').cfg)}</div>
-    <div class="grid g2">
+    </div>` },
+      { id: 'spend', title: 'Spend and status', html: `<div class="grid g2">${chartCard('Planned replacement spend by fiscal year', presetCfg('Planned replacement spend by fiscal year').cfg)}${chartCard('Replacement status', presetCfg('Replacement status').cfg)}</div>` },
+      { id: 'attn', title: 'Needs attention and next replacements', html: `<div class="grid g2">
       <div class="card"><div class="card-h"><h3>Needs attention</h3></div>${alerts.length ? `<ul class="alerts">${alerts.map(([k, m, h]) => `<li><span class="badge ${k}">${k === 'bad' ? 'Urgent' : k === 'warn' ? 'Check' : 'FYI'}</span><a href="${h}">${esc(m)}</a></li>`).join('')}</ul>` : '<div class="empty">All clear.</div>'}</div>
       <div class="card"><div class="card-h"><h3>Next replacements</h3><span class="spacer"></span><a href="#/plan">Full plan →</a></div>
       ${upcoming.length ? `<table><thead><tr><th>Lab</th><th>Model</th><th class="num">Qty</th><th>Planned</th><th class="num">Est. cost</th></tr></thead><tbody>${upcoming.map(l => `<tr><td><a href="#/lab/${l.labId}">${esc(labLabel(DB.get('labs', l.labId)))}</a></td><td>${esc(modelName(l))}</td><td class="num">${l.qty}</td><td class="nowrap">${fmtDate(plannedDate(l))} ${lineState(l) === 'Overdue' ? stateBadge('Overdue') : ''}</td><td class="num">${money(lineCost(l))}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Nothing due in this window.</div>'}</div>
-    </div>
-    <div class="grid g2">${chartCard('Devices by status', presetCfg('Devices by status').cfg)}${chartCard('Managed devices by operating system', presetCfg('Managed devices by operating system').cfg)}</div>
-    <div class="grid g2">${chartCard('Hardware age', presetCfg('Hardware age').cfg)}
+    </div>` },
+      { id: 'mix', title: 'Devices and operating systems', html: `<div class="grid g2">${chartCard('Devices by status', presetCfg('Devices by status').cfg)}${chartCard('Managed devices by operating system', presetCfg('Managed devices by operating system').cfg)}</div>` },
+      { id: 'age', title: 'Hardware age and recent activity', html: `<div class="grid g2">${chartCard('Hardware age', presetCfg('Hardware age').cfg)}
       <div class="card"><div class="card-h"><h3>Recent activity</h3><span class="spacer"></span><a href="#/reports">View all →</a></div>
-      ${feed.length ? `<ul class="feed">${feed.map(r => `<li><span class="av">${esc(initials(r.who))}</span><div><div><b>${esc(r.who)}</b> <span class="muted">${r.a === 'add' ? 'added' : r.a === 'del' ? 'deleted' : 'updated'}</span> ${recHref(r.t, r.id) ? `<a href="${recHref(r.t, r.id)}">${esc(r.n)}</a>` : esc(r.n)}</div><div class="small muted">${esc(TABLE_LABEL[r.t] || r.t)} · ${new Date(r.when).toLocaleString()}</div></div></li>`).join('')}</ul>` : '<div class="empty">Changes will show up here.</div>'}</div></div>
-    ${d.charts.length ? `<h2>Pinned charts</h2><div class="grid g2">${d.charts.map(c => chartCard(c.title, c.cfg, `<span class="spacer"></span><button class="btn sm edit-only" data-unpin="${c.id}">Unpin</button>`)).join('')}</div>` : ''}`;
+      ${feed.length ? `<ul class="feed">${feed.map(r => `<li><span class="av">${esc(initials(r.who))}</span><div><div><b>${esc(r.who)}</b> <span class="muted">${r.a === 'add' ? 'added' : r.a === 'del' ? 'deleted' : 'updated'}</span> ${recHref(r.t, r.id) ? `<a href="${recHref(r.t, r.id)}">${esc(r.n)}</a>` : esc(r.n)}</div><div class="small muted">${esc(TABLE_LABEL[r.t] || r.t)} · ${new Date(r.when).toLocaleString()}</div></div></li>`).join('')}</ul>` : '<div class="empty">Changes will show up here.</div>'}</div></div>` }
+    ];
+    if (d.charts.length) secs.push({ id: 'pins', title: 'Pinned charts', html: `<div class="grid g2">${d.charts.map(c => chartCard(c.title, c.cfg, `<span class="spacer"></span><button class="btn sm edit-only" data-unpin="${c.id}">Unpin</button>`)).join('')}</div>` });
+    el.innerHTML = pageHead('Dashboard', `<a class="btn" href="#/exec">${ic('trend')} Executive summary</a>`, 'Dashboard') + dashLayout('dash', secs);
     el.onclick = e => { const u = e.target.closest('[data-unpin]'); if (u) { DB.remove('charts', u.dataset.unpin); render(); } };
   }
 };

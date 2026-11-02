@@ -148,6 +148,68 @@ body.nav-collapsed nav a{justify-content:center;padding:10px}body.nav-collapsed 
 @media(max-width:900px){#btn-user span:last-child,#btn-dl{display:none}.gs-res{position:fixed;left:10px;right:10px;top:62px}#side{transform:translateX(-100%)}body.nav-open #side{transform:none;box-shadow:0 0 40px rgba(0,0,0,.4)}.main-col{margin-left:0}.top{padding:0 14px}.split{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.field.wide{grid-column:1}main#view{padding:16px 14px}.g2{grid-template-columns:1fr}body.nav-collapsed{--sw:240px}}
 @media print{#side,.top,.no-print,.btn,.tbl-bar,#toasts,.crumbs{display:none!important}.main-col{margin:0}body{background:#fff;color:#000}main#view{padding:0}.card,.lab-block,.kpi{box-shadow:none}.tbl-wrap{max-height:none;overflow:visible}}
 
+/* ---- collapsible sidebar groups ---- */
+.nav-tools{display:flex;gap:4px;justify-content:flex-end;padding:0 4px 2px}
+.nav-tools button{background:none;border:0;color:var(--side-head);font-size:11px;cursor:pointer;padding:3px 6px;border-radius:5px}.nav-tools button:hover{color:#fff;background:var(--side2)}
+nav .navg-h{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;cursor:pointer;text-align:left;font-family:inherit}
+nav .navg-h:hover{color:#fff}nav .navg-h .ic{font-size:14px;transition:transform .2s}
+.navg.shut .navg-h .ic{transform:rotate(-90deg)}
+.navg-body{display:grid;grid-template-rows:1fr;transition:grid-template-rows .22s ease}.navg-body>div{overflow:hidden;min-height:0}
+.navg.shut .navg-body{grid-template-rows:0fr}
+body.nav-collapsed .nav-tools,body.nav-collapsed .navg-h{display:none}
+body.nav-collapsed .navg.shut .navg-body{grid-template-rows:1fr}
+body.nav-collapsed .navg+.navg{border-top:1px solid rgba(255,255,255,.07);margin-top:6px;padding-top:6px}
+#side{transition:transform .2s,width .2s}.main-col{transition:margin-left .2s}
+/* ---- rearrangeable dashboard sections ---- */
+.dsec-tools{display:flex;align-items:center;gap:8px;margin:-4px 0 8px}.dsec-tools .spacer{flex:1}
+.dsec{margin-bottom:6px;border-radius:12px}
+.dsec-h{display:flex;align-items:center;gap:6px;margin:2px 0 8px}
+.dsec-grip{cursor:grab;color:var(--muted);letter-spacing:-2px;padding:4px 6px;border-radius:6px;user-select:none;opacity:.55;font-weight:700}.dsec-grip:hover{opacity:1;background:var(--surface2)}.dsec-grip:active{cursor:grabbing}
+.dsec-t{display:flex;align-items:center;gap:6px;background:none;border:0;cursor:pointer;color:var(--text);font:inherit;font-weight:650;font-size:15px;padding:3px 6px;border-radius:7px}.dsec-t:hover{background:var(--surface2)}
+.dsec-t .ic{font-size:16px;color:var(--muted);transition:transform .2s}.dsec.shut .dsec-t .ic{transform:rotate(-90deg)}
+.dsec-n{margin-left:6px}
+.dsec-b{display:grid;grid-template-rows:1fr;transition:grid-template-rows .25s ease}.dsec-b>div{overflow:hidden;min-height:0;padding:2px 2px 0;margin:-2px}
+.dsec.shut .dsec-b{grid-template-rows:0fr}.dsec.shut{margin-bottom:0}
+.dsec.dragging{opacity:.4;outline:2px dashed var(--accent);outline-offset:4px}
+/* ---- board drag and drop ---- */
+.kcol{border-radius:10px;padding:4px;min-height:90px;transition:background .15s,outline-color .15s;outline:2px dashed transparent;outline-offset:-2px}
+.kcol.over{background:var(--accent-soft);outline-color:var(--accent)}
+.kcard{cursor:grab;transition:box-shadow .15s,transform .15s}.kcard:hover{box-shadow:0 4px 14px rgba(16,24,40,.12);transform:translateY(-1px)}.kcard.dragging{opacity:.35;transform:rotate(1.5deg)}
+body.ro .kcard{cursor:default}
+/* ---- executive summary ---- */
+.hero{display:flex;gap:26px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,var(--surface),var(--accent-soft))}
+.hero-ring{display:flex;flex-direction:column;align-items:center;gap:8px;flex:none}
+.ring{width:150px;height:150px}.ring-bg{fill:none;stroke:var(--border);stroke-width:12}.ring-fg{fill:none;stroke:var(--ok);stroke-width:12;stroke-linecap:round;stroke-dashoffset:var(--off);animation:ringIn .9s ease-out}
+.ring.warn .ring-fg{stroke:var(--warn)}.ring.bad .ring-fg{stroke:var(--danger)}
+.ring-n{font-size:38px;font-weight:750;fill:var(--text)}.ring-s{font-size:11px;fill:var(--muted)}
+@keyframes ringIn{from{stroke-dashoffset:var(--full)}}
+.hero-body{flex:1 1 380px;min-width:0}.hero-sum{margin:0 0 14px;font-size:15px;line-height:1.5}
+.mrow{margin-bottom:9px}.mrow-h{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.meter.ok>i{background:var(--ok)}.meter.warn>i{background:var(--warn)}.meter.bad>i{background:var(--danger)}.meter.acc>i{background:var(--accent)}
+.meter{height:8px}.meter>i{transition:width .7s cubic-bezier(.2,.8,.2,1);animation:growX .7s cubic-bezier(.2,.8,.2,1)}
+@keyframes growX{from{width:0!important}}
+.spark{flex:none;align-self:flex-end}
+/* ---- polish ---- */
+main#view>*{animation:viewIn .28s ease both}
+@keyframes viewIn{from{opacity:0;transform:translateY(6px)}}
+.card{transition:box-shadow .18s,border-color .18s}.card:hover{box-shadow:0 4px 18px rgba(16,24,40,.08)}
+a.kpi{transition:transform .15s,border-color .15s,box-shadow .15s}a.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(16,24,40,.12)}
+.kpi .ico{transition:transform .2s}.kpi:hover .ico{transform:scale(1.08)}
+.btn{transition:background .12s,filter .12s,transform .08s}.btn:active{transform:scale(.97)}
+.drop{transition:border-color .15s,background .15s,transform .15s}.drop.over{transform:scale(1.01);border-style:solid}
+.chart svg.bv rect.mark{transform-box:fill-box;transform-origin:50% 100%;animation:growY .55s cubic-bezier(.2,.8,.2,1) both}
+.chart svg.bh rect.mark{transform-box:fill-box;transform-origin:0 50%;animation:growXs .55s cubic-bezier(.2,.8,.2,1) both}
+.chart svg path.mark,.chart svg polyline{animation:fadeIn .6s ease both}
+.chart svg .mark:hover{filter:brightness(1.12)}
+@keyframes growY{from{transform:scaleY(0)}}@keyframes growXs{from{transform:scaleX(0)}}@keyframes fadeIn{from{opacity:0}}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;border:2px solid transparent;background-clip:content-box}::-webkit-scrollbar-thumb:hover{background:var(--muted);background-clip:content-box;border:2px solid transparent}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media print{.dsec-tools,.dsec-grip,.nav-tools{display:none!important}.dsec .dsec-b{grid-template-rows:1fr!important}.dsec,.card{break-inside:avoid}.hero{background:#fff}main#view>*{animation:none}}
+.grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.bigtile{display:grid;place-items:center;min-height:170px;text-align:center}.bigtile .big-n{font-size:64px;font-weight:300;color:var(--accent);line-height:1}
+@media(max-width:1200px){.grid.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.grid.g3{grid-template-columns:1fr}}@media(max-width:900px){.grid.g4{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -1070,7 +1132,7 @@ function barSVG(spec, horiz) {
   const stacked = multi && spec.stacked !== false;
   const totals = labels.map((_, i) => stacked ? sum(series, s => s.values[i] || 0) : Math.max(...series.map(s => s.values[i] || 0)));
   const sc = niceScale(Math.max(...totals));
-  const W = 760; let out = '';
+  const W = spec.w || 760; let out = '';
   const leg = multi ? legendSVG(series.map(s => s.name), W, 12, 16) : { svg: '', h: 0 };
   const tip = (i, s) => `${labels[i]}${multi ? ' · ' + s.name : ''}: ${fmtFull(s.values[i], money)}`;
   if (!horiz) {
@@ -1100,14 +1162,14 @@ function barSVG(spec, horiz) {
       out += rot ? `<text transform="translate(${cx + 4},${ty - 2}) rotate(-38)" text-anchor="end" font-size="11" fill="var(--muted)">${esc(trunc(lb, 22))}</text>` : `<text x="${cx}" y="${ty}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(trunc(lb, 16))}</text>`;
     });
     out += `<line x1="${m.l}" x2="${W - m.r}" y1="${m.t + ih}" y2="${m.t + ih}" stroke="var(--muted)"/>`;
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title || 'Bar chart')}">${out}</svg>`;
+    return `<svg class="bv" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title || 'Bar chart')}">${out}</svg>`;
   }
-  const rowH = 28, m = { l: 180, r: 56, t: 10 + leg.h, b: 28 }, H = m.t + m.b + n * rowH, iw = W - m.l - m.r;
+  const rowH = 28, m = { l: W < 600 ? 112 : 180, r: 56, t: 10 + leg.h, b: 28 }, H = m.t + m.b + n * rowH, iw = W - m.l - m.r;
   out += leg.svg;
   sc.ticks.forEach(t => { const x = m.l + t / sc.max * iw; out += `<line y1="${m.t}" y2="${H - m.b}" x1="${x}" x2="${x}" stroke="var(--border)"/><text x="${x}" y="${H - m.b + 16}" text-anchor="middle" font-size="11" fill="var(--muted)">${fmtVal(t, money)}</text>`; });
   labels.forEach((lb, i) => {
     const y = m.t + i * rowH, bh = rowH - 8;
-    out += `<text x="${m.l - 8}" y="${y + rowH / 2 + 1}" text-anchor="end" font-size="11" fill="var(--text)">${esc(trunc(lb, 24))}</text>`;
+    out += `<text x="${m.l - 8}" y="${y + rowH / 2 + 1}" text-anchor="end" font-size="11" fill="var(--text)">${esc(trunc(lb, W < 600 ? 16 : 24))}</text>`;
     let acc = 0;
     series.forEach((s, si) => {
       const v = s.values[i] || 0; if (!v) return;
@@ -1118,7 +1180,7 @@ function barSVG(spec, horiz) {
     });
     if (totals[i]) out += `<text x="${m.l + totals[i] / sc.max * iw + 6}" y="${y + rowH / 2 + 1}" font-size="11" fill="var(--text)">${fmtVal(totals[i], money)}</text>`;
   });
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title || 'Bar chart')}">${out}</svg>`;
+  return `<svg class="bh" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title || 'Bar chart')}">${out}</svg>`;
 }
 
 function lineSVG(spec) {
@@ -1145,8 +1207,8 @@ function lineSVG(spec) {
 }
 
 function donutSVG(spec) {
-  const { labels, money } = spec, vals = spec.series[0].values, total = sum(vals), W = 760, H = Math.max(300, 40 + labels.length * 24);
-  const cx = 170, cy = H / 2, r1 = 130, r0 = 76;
+  const { labels, money } = spec, vals = spec.series[0].values, total = sum(vals), cp = !!spec.compact, W = cp ? 300 : 760, H = cp ? 250 + labels.length * 20 : Math.max(300, 40 + labels.length * 24);
+  const cx = cp ? 150 : 170, cy = cp ? 112 : H / 2, r1 = cp ? 96 : 130, r0 = cp ? 58 : 76;
   let a = -Math.PI / 2, out = '';
   const P = (r, t) => [cx + r * Math.cos(t), cy + r * Math.sin(t)];
   labels.forEach((lb, i) => {
@@ -1157,9 +1219,10 @@ function donutSVG(spec) {
     a += da;
   });
   out += `<text x="${cx}" y="${cy - 2}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--text)">${fmtVal(total, money)}</text><text x="${cx}" y="${cy + 18}" text-anchor="middle" font-size="12" fill="var(--muted)">${esc(spec.metricLabel || 'total')}</text>`;
-  const ly = (H - labels.length * 24) / 2 + 14;
+  const ly = cp ? 240 : (H - labels.length * 24) / 2 + 14;
   labels.forEach((lb, i) => {
-    const y = ly + i * 24;
+    const y = ly + i * (cp ? 20 : 24);
+    if (cp) { out += `<rect x="14" y="${y - 10}" width="11" height="11" rx="2" fill="${seriesColor(lb, i)}"/><text x="32" y="${y}" font-size="12" fill="var(--text)">${esc(trunc(lb, 20))}</text><text x="${W - 14}" y="${y}" text-anchor="end" font-size="12" fill="var(--muted)">${fmtFull(vals[i], money)} · ${total ? (vals[i] / total * 100).toFixed(0) : 0}%</text>`; return; }
     out += `<rect x="360" y="${y - 10}" width="11" height="11" rx="2" fill="${seriesColor(lb, i)}"/><text x="379" y="${y}" font-size="12" fill="var(--text)">${esc(trunc(lb, 34))}</text><text x="${W - 14}" y="${y}" text-anchor="end" font-size="12" fill="var(--muted)">${fmtFull(vals[i], money)} · ${total ? (vals[i] / total * 100).toFixed(0) : 0}%</text>`;
   });
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title || 'Donut chart')}">${out}</svg>`;
@@ -1558,23 +1621,45 @@ function editEntity(kind, id, defaults = {}, after) {
 // ---------- router ----------
 const VIEWS = {};
 const NAV = [
-  ['dashboard', 'Dashboard', 'home'],
+  ['dashboard', 'Dashboard', 'home'], ['exec', 'Executive summary', 'trend'],
   ['sep', 'Planning'], ['plan', 'Replacement plan', 'calendar'], ['planner', 'Budget planner', 'dollar'], ['proposals', 'Proposals', 'file'], ['projects', 'Replacement projects', 'tool'], ['techfee', 'Tech Fee projects', 'dollar'],
-  ['sep', 'Assets'], ['labs', 'Labs', 'monitor'], ['hardware', 'Hardware', 'cpu'], ['devices', 'Devices', 'laptop'], ['models', 'Models & costs', 'tag'], ['audit', 'Labels & audits', 'tag'],
+  ['sep', 'Assets'], ['assets', 'Asset overview', 'pie'], ['labs', 'Labs', 'monitor'], ['hardware', 'Hardware', 'cpu'], ['devices', 'Devices', 'laptop'], ['models', 'Models & costs', 'tag'], ['audit', 'Labels & audits', 'tag'],
   ['sep', 'Software & people'], ['software', 'Software', 'package'], ['contacts', 'Contacts', 'users'], ['mylabs', 'My labs', 'monitor'], ['users', 'App users', 'users'],
   ['sep', 'Operations'], ['maintenance', 'Maintenance', 'tool'], ['reports', 'Reports', 'trend'], ['charts', 'Charts', 'pie'],
   ['sep', 'Admin'], ['import', 'Import', 'upload'], ['settings', 'Settings & data', 'sliders']
 ];
 const NAV_COUNT = { labs: () => DB.data.labs.length, devices: () => DB.data.devices.length };
+// ---- collapsible sidebar groups (state is a per-browser convenience) ----
+const navClosed = () => { try { return JSON.parse(lsGet('lt-navc') || '[]'); } catch { return []; } };
+const navActive = (k, name) => name === k || (name === 'lab' && k === 'labs') || (name === 'device' && k === 'devices') || (name === 'proposal' && k === 'proposals');
+function renderNav(name) {
+  const groups = []; NAV.forEach(([k, l, i]) => { if (k === 'sep') groups.push({ title: l, items: [] }); else { if (!groups.length) groups.push({ title: '', items: [] }); groups[groups.length - 1].items.push([k, l, i]); } });
+  const closed = navClosed();
+  $('#nav').innerHTML = `<div class="nav-tools"><button data-navall="close">Collapse all</button><button data-navall="open">Expand all</button></div>` + groups.map(g => {
+    const act = g.items.some(([k]) => navActive(k, name)), shut = g.title && closed.includes(g.title) && !act;
+    const links = g.items.map(([k, l, i]) => `<a href="#/${k}" title="${l}" class="${navActive(k, name) ? 'on' : ''}">${ic(i)}<span>${l}</span>${NAV_COUNT[k] ? `<span class="cnt">${fmtNum(NAV_COUNT[k]())}</span>` : ''}</a>`).join('');
+    return g.title ? `<div class="navg${shut ? ' shut' : ''}" data-g="${esc(g.title)}"><button class="sep navg-h" aria-expanded="${!shut}"><span>${esc(g.title)}</span>${ic('down')}</button><div class="navg-body"><div>${links}</div></div></div>` : links;
+  }).join('');
+}
+document.addEventListener('click', e => {
+  const h = e.target.closest?.('.navg-h'), all = e.target.closest?.('[data-navall]');
+  if (!h && !all) return;
+  const titles = [...document.querySelectorAll('#nav .navg')].map(x => x.dataset.g);
+  let c = navClosed();
+  if (h) { const g = h.parentElement.dataset.g; c = c.includes(g) ? c.filter(x => x !== g) : [...c, g]; }
+  else c = all.dataset.navall === 'close' ? titles : [];
+  lsSet('lt-navc', c.length ? JSON.stringify(c) : '');
+  document.querySelectorAll('#nav .navg').forEach(x => { const s = c.includes(x.dataset.g); x.classList.toggle('shut', s); x.querySelector('.navg-h').setAttribute('aria-expanded', !s); });
+});
 function route() { const [, name = 'dashboard', param] = location.hash.split('/'); return { name, param: param ? decodeURIComponent(param) : '' }; }
 function render() {
   if (UI.modal) { UI.needsRender = true; return; }
   applyTheme();
   const { name, param } = route(), v = VIEWS[name === 'lab' ? 'lab' : name] || VIEWS.dashboard;
-  $('#nav').innerHTML = NAV.map(([k, l, i]) => k === 'sep' ? `<div class="sep">${l}</div>` : `<a href="#/${k}" title="${l}" class="${(name === k || (name === 'lab' && k === 'labs') || (name === 'device' && k === 'devices') || (name === 'proposal' && k === 'proposals')) ? 'on' : ''}">${ic(i)}<span>${l}</span>${NAV_COUNT[k] ? `<span class="cnt">${fmtNum(NAV_COUNT[k]())}</span>` : ''}</a>`).join('');
+  renderNav(name);
   $('#org').textContent = DB.data.settings.orgName || '';
   const el = $('#view'); el.innerHTML = '';
-  try { v.render(el, param); mountCharts(el); } catch (e) { console.error(e); el.innerHTML = `<div class="card"><h2>Something went wrong drawing this page</h2><pre>${esc(e.stack || e.message)}</pre></div>`; }
+  try { v.render(el, param); mountCharts(el); bindLayout(el); countUps(el); } catch (e) { console.error(e); el.innerHTML = `<div class="card"><h2>Something went wrong drawing this page</h2><pre>${esc(e.stack || e.message)}</pre></div>`; }
   updateStatus();
 }
 window.addEventListener('hashchange', () => { window.scrollTo(0, 0); render(); });
@@ -1646,8 +1731,8 @@ VIEWS.dashboard = {
     ].filter(Boolean);
     const upcoming = lines.filter(l => plannedDate(l) && plannedDate(l) <= to).sort((a, b) => cmp(plannedDate(a), plannedDate(b))).slice(0, 8);
     const feed = activityRows().filter(r => r.a !== 'note').slice(0, 8);
-    el.innerHTML = pageHead('Dashboard', '', 'Dashboard') + `
-    <div class="kpis">
+    const secs = [
+      { id: 'kpis', title: 'Key figures', html: `<div class="kpis">
       ${tile('#/labs', 'monitor', '', fmtNum(d.labs.length), 'Labs', `${d.buildings.length} buildings`)}
       ${tile('#/devices', 'laptop', 'infok', fmtNum(d.devices.length), 'Managed devices', `${fmtNum(sum(lines, l => +l.qty || 0))} in inventory`)}
       ${tile('#/plan', 'alert', over.length ? 'bad' : 'good', fmtNum(sum(over, l => +l.qty || 0)), 'Overdue devices', `${money(sum(over, lineCost))} to replace`)}
@@ -1656,18 +1741,20 @@ VIEWS.dashboard = {
       ${tile('#/software', 'package', '', fmtNum(d.software.length), 'Software titles', `${money(sum(d.software, s => +s.annualCost || 0))} / yr`)}
       ${tile('#/maintenance', 'tool', openM ? 'warnk' : '', fmtNum(openM), 'Open maintenance', `${money(sum(d.maintenances, m => +m.cost || 0))} total spend`)}
       ${tile('#/contacts', 'users', '', fmtNum(d.contacts.length), 'Contacts')}
-    </div>
-    <div class="grid g2">${chartCard('Planned replacement spend by fiscal year', presetCfg('Planned replacement spend by fiscal year').cfg)}${chartCard('Replacement status', presetCfg('Replacement status').cfg)}</div>
-    <div class="grid g2">
+    </div>` },
+      { id: 'spend', title: 'Spend and status', html: `<div class="grid g2">${chartCard('Planned replacement spend by fiscal year', presetCfg('Planned replacement spend by fiscal year').cfg)}${chartCard('Replacement status', presetCfg('Replacement status').cfg)}</div>` },
+      { id: 'attn', title: 'Needs attention and next replacements', html: `<div class="grid g2">
       <div class="card"><div class="card-h"><h3>Needs attention</h3></div>${alerts.length ? `<ul class="alerts">${alerts.map(([k, m, h]) => `<li><span class="badge ${k}">${k === 'bad' ? 'Urgent' : k === 'warn' ? 'Check' : 'FYI'}</span><a href="${h}">${esc(m)}</a></li>`).join('')}</ul>` : '<div class="empty">All clear.</div>'}</div>
       <div class="card"><div class="card-h"><h3>Next replacements</h3><span class="spacer"></span><a href="#/plan">Full plan →</a></div>
       ${upcoming.length ? `<table><thead><tr><th>Lab</th><th>Model</th><th class="num">Qty</th><th>Planned</th><th class="num">Est. cost</th></tr></thead><tbody>${upcoming.map(l => `<tr><td><a href="#/lab/${l.labId}">${esc(labLabel(DB.get('labs', l.labId)))}</a></td><td>${esc(modelName(l))}</td><td class="num">${l.qty}</td><td class="nowrap">${fmtDate(plannedDate(l))} ${lineState(l) === 'Overdue' ? stateBadge('Overdue') : ''}</td><td class="num">${money(lineCost(l))}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Nothing due in this window.</div>'}</div>
-    </div>
-    <div class="grid g2">${chartCard('Devices by status', presetCfg('Devices by status').cfg)}${chartCard('Managed devices by operating system', presetCfg('Managed devices by operating system').cfg)}</div>
-    <div class="grid g2">${chartCard('Hardware age', presetCfg('Hardware age').cfg)}
+    </div>` },
+      { id: 'mix', title: 'Devices and operating systems', html: `<div class="grid g2">${chartCard('Devices by status', presetCfg('Devices by status').cfg)}${chartCard('Managed devices by operating system', presetCfg('Managed devices by operating system').cfg)}</div>` },
+      { id: 'age', title: 'Hardware age and recent activity', html: `<div class="grid g2">${chartCard('Hardware age', presetCfg('Hardware age').cfg)}
       <div class="card"><div class="card-h"><h3>Recent activity</h3><span class="spacer"></span><a href="#/reports">View all →</a></div>
-      ${feed.length ? `<ul class="feed">${feed.map(r => `<li><span class="av">${esc(initials(r.who))}</span><div><div><b>${esc(r.who)}</b> <span class="muted">${r.a === 'add' ? 'added' : r.a === 'del' ? 'deleted' : 'updated'}</span> ${recHref(r.t, r.id) ? `<a href="${recHref(r.t, r.id)}">${esc(r.n)}</a>` : esc(r.n)}</div><div class="small muted">${esc(TABLE_LABEL[r.t] || r.t)} · ${new Date(r.when).toLocaleString()}</div></div></li>`).join('')}</ul>` : '<div class="empty">Changes will show up here.</div>'}</div></div>
-    ${d.charts.length ? `<h2>Pinned charts</h2><div class="grid g2">${d.charts.map(c => chartCard(c.title, c.cfg, `<span class="spacer"></span><button class="btn sm edit-only" data-unpin="${c.id}">Unpin</button>`)).join('')}</div>` : ''}`;
+      ${feed.length ? `<ul class="feed">${feed.map(r => `<li><span class="av">${esc(initials(r.who))}</span><div><div><b>${esc(r.who)}</b> <span class="muted">${r.a === 'add' ? 'added' : r.a === 'del' ? 'deleted' : 'updated'}</span> ${recHref(r.t, r.id) ? `<a href="${recHref(r.t, r.id)}">${esc(r.n)}</a>` : esc(r.n)}</div><div class="small muted">${esc(TABLE_LABEL[r.t] || r.t)} · ${new Date(r.when).toLocaleString()}</div></div></li>`).join('')}</ul>` : '<div class="empty">Changes will show up here.</div>'}</div></div>` }
+    ];
+    if (d.charts.length) secs.push({ id: 'pins', title: 'Pinned charts', html: `<div class="grid g2">${d.charts.map(c => chartCard(c.title, c.cfg, `<span class="spacer"></span><button class="btn sm edit-only" data-unpin="${c.id}">Unpin</button>`)).join('')}</div>` });
+    el.innerHTML = pageHead('Dashboard', `<a class="btn" href="#/exec">${ic('trend')} Executive summary</a>`, 'Dashboard') + dashLayout('dash', secs);
     el.onclick = e => { const u = e.target.closest('[data-unpin]'); if (u) { DB.remove('charts', u.dataset.unpin); render(); } };
   }
 };
@@ -2463,7 +2550,8 @@ function initChrome() {
   $('#create-menu').innerHTML = `<div class="dh">Create new</div>` + [['lab', 'monitor', 'Lab'], ['hardware', 'cpu', 'Hardware line'], ['device', 'laptop', 'Device'], ['model', 'tag', 'Model'], ['software', 'package', 'Software'], ['contact', 'users', 'Contact'], ['maintenance', 'tool', 'Maintenance'], ['building', 'building', 'Building']]
     .map(([k, i, l]) => `<button data-create="${k}">${ic(i)} ${l}</button>`).join('');
   $('#btn-mode').onclick = cycleMode;
-  $('#btn-menu').onclick = () => document.body.classList.toggle(innerWidth <= 900 ? 'nav-open' : 'nav-collapsed');
+  setTimeout(() => { if (lsGet('lt-rail') === '1' && innerWidth > 900) document.body.classList.add('nav-collapsed'); });
+  $('#btn-menu').onclick = () => { if (innerWidth <= 900) return document.body.classList.toggle('nav-open'); lsSet('lt-rail', document.body.classList.toggle('nav-collapsed') ? '1' : ''); };
   document.addEventListener('click', e => {
     const t = e.target, dd = t.closest('.dd');
     $$('.dd.open').forEach(x => { if (x !== dd) x.classList.remove('open'); });
@@ -3443,7 +3531,8 @@ VIEWS.projects = {
     const host = $('#t', el), lab = p => p.labId ? labLabel(DB.get('labs', p.labId)) : '';
     const warn = p => { const b = blackoutHit(p); return b ? `<span class="badge bad" title="Install overlaps a blackout window">⚠ ${esc(b)}</span>` : ''; };
     if (tab === 'board') {
-      host.innerHTML = `<div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);gap:12px;overflow:auto;padding-bottom:8px">${PROJECT_STATUS.map(s => { const ps = list.filter(p => (p.status || 'Planned') === s); return `<div><div class="small muted" style="margin-bottom:6px"><b>${s}</b> · ${ps.length}${ps.length ? ' · ' + money(sum(ps, p => +p.amount || 0)) : ''}</div>${ps.map(p => `<div class="card" style="padding:10px;margin-bottom:8px"><b data-e="${p.id}" style="cursor:pointer">${esc(p.title)}</b><div class="small muted">${esc(lab(p))}</div><div class="small">${p.amount ? money(p.amount) : ''} ${esc(p.vendor || '')}</div><div class="small muted">${p.installStart ? 'Install ' + fmtDate(p.installStart) + (p.installEnd ? ' – ' + fmtDate(p.installEnd) : '') : ''}</div>${warn(p)}${noticeBadge(p)}<div class="chips edit-only" style="margin-top:6px"><button class="btn sm" data-notify="${p.id}" title="Email this lab’s contacts">✉</button><button class="btn sm" data-mv="${p.id}|-1"${PROJECT_STATUS.indexOf(s) === 0 ? ' disabled' : ''}>‹</button><button class="btn sm" data-mv="${p.id}|1"${PROJECT_STATUS.indexOf(s) >= 6 ? ' disabled' : ''}>›</button></div></div>`).join('')}</div>`; }).join('')}</div>`;
+      host.innerHTML = `<div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);gap:12px;overflow:auto;padding-bottom:8px">${PROJECT_STATUS.map(s => { const ps = list.filter(p => (p.status || 'Planned') === s); return `<div class="kcol" data-col="${s}"><div class="small muted" style="margin-bottom:6px"><b>${s}</b> · ${ps.length}${ps.length ? ' · ' + money(sum(ps, p => +p.amount || 0)) : ''}</div>${ps.map(p => `<div class="card kcard" draggable="true" data-card="${p.id}" style="padding:10px;margin-bottom:8px"><b data-e="${p.id}" style="cursor:pointer">${esc(p.title)}</b><div class="small muted">${esc(lab(p))}</div><div class="small">${p.amount ? money(p.amount) : ''} ${esc(p.vendor || '')}</div><div class="small muted">${p.installStart ? 'Install ' + fmtDate(p.installStart) + (p.installEnd ? ' – ' + fmtDate(p.installEnd) : '') : ''}</div>${warn(p)}${noticeBadge(p)}<div class="chips edit-only" style="margin-top:6px"><button class="btn sm" data-notify="${p.id}" title="Email this lab’s contacts">✉</button><button class="btn sm" data-mv="${p.id}|-1"${PROJECT_STATUS.indexOf(s) === 0 ? ' disabled' : ''}>‹</button><button class="btn sm" data-mv="${p.id}|1"${PROJECT_STATUS.indexOf(s) >= 6 ? ' disabled' : ''}>›</button></div></div>`).join('')}</div>`; }).join('')}</div>`;
+      kanbanDnD(host, 'projects', PROJECT_STATUS, 'Planned');
     } else if (tab === 'table') {
       mountTable(host, {
         id: 'projects', csvName: 'projects', rows: () => list, rowId: r => r.id, onRow: id => editEntity('project', id), defaultSort: { k: 'inst', dir: 'asc' },
@@ -4239,7 +4328,8 @@ VIEWS.techfee = {
     const host = $('#t', el), labs = p => (p.labIds || []).map(id => labLabel(DB.get('labs', id))).join(', ');
     const overdue = p => p.reportDue && !p.reportSubmitted && p.reportDue < todayStr() ? '<span class="badge bad">report overdue</span>' : p.reportDue && !p.reportSubmitted ? `<span class="badge warn">report due ${esc(fmtDate(p.reportDue))}</span>` : '';
     if (tab === 'board') {
-      host.innerHTML = `<div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:12px;overflow:auto;padding-bottom:8px">${TF_STATUS.map(s => { const ps = list.filter(p => p.status === s); return `<div><div class="small muted" style="margin-bottom:6px"><b>${s}</b> · ${ps.length}</div>${ps.map(p => `<div class="card" style="padding:10px;margin-bottom:8px"><b data-e="${p.id}" style="cursor:pointer">${esc(p.title)}</b><div class="small muted">${esc(p.department || '')}</div><div class="small">${p.awarded ? money(p.awarded) + ' awarded' : p.requested ? money(p.requested) + ' requested' : ''}</div><div class="small muted">${esc(labs(p))}</div>${overdue(p)}<div class="chips edit-only" style="margin-top:6px"><button class="btn sm" data-mv="${p.id}|-1"${TF_STATUS.indexOf(s) === 0 ? ' disabled' : ''}>‹</button><button class="btn sm" data-mv="${p.id}|1"${TF_STATUS.indexOf(s) >= TF_STATUS.length - 1 ? ' disabled' : ''}>›</button></div></div>`).join('')}</div>`; }).join('')}</div>`;
+      host.innerHTML = `<div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:12px;overflow:auto;padding-bottom:8px">${TF_STATUS.map(s => { const ps = list.filter(p => p.status === s); return `<div class="kcol" data-col="${s}"><div class="small muted" style="margin-bottom:6px"><b>${s}</b> · ${ps.length}</div>${ps.map(p => `<div class="card kcard" draggable="true" data-card="${p.id}" style="padding:10px;margin-bottom:8px"><b data-e="${p.id}" style="cursor:pointer">${esc(p.title)}</b><div class="small muted">${esc(p.department || '')}</div><div class="small">${p.awarded ? money(p.awarded) + ' awarded' : p.requested ? money(p.requested) + ' requested' : ''}</div><div class="small muted">${esc(labs(p))}</div>${overdue(p)}<div class="chips edit-only" style="margin-top:6px"><button class="btn sm" data-mv="${p.id}|-1"${TF_STATUS.indexOf(s) === 0 ? ' disabled' : ''}>‹</button><button class="btn sm" data-mv="${p.id}|1"${TF_STATUS.indexOf(s) >= TF_STATUS.length - 1 ? ' disabled' : ''}>›</button></div></div>`).join('')}</div>`; }).join('')}</div>`;
+      kanbanDnD(host, 'techProjects', TF_STATUS, '');
     } else {
       mountTable(host, {
         id: 'techfee', csvName: 'tech-fee-projects', rows: () => list, rowId: r => r.id, onRow: id => editEntity('techProject', id), defaultSort: { k: 'title', dir: 'asc' },
@@ -4465,6 +4555,209 @@ VIEWS.labsheet = {
       ${lab.notes ? `<h3>Notes</h3><p class="small">${esc(lab.notes)}</p>` : ''}
       <p class="small muted" style="margin-top:24px">Printed ${esc(fmtDate(todayStr()))} by ${esc(DB.user)} · Checked by: ____________________ Date: ____________</p></div>`;
     $('#pr', el).onclick = () => window.print();
+  }
+};
+
+// ---- 34-layout.js
+// Shared interface helpers: rearrangeable + collapsible dashboard sections, kanban drag and drop, sparklines, count-up numbers.
+// Layout choices are per-browser conveniences (localStorage); they never touch the shared data file.
+const lsList = k => { try { const v = JSON.parse(lsGet(k) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
+function dashLayout(key, sections) {
+  const ord = lsList('lt-ord-' + key), shut = lsList('lt-shut-' + key), rank = s => { const i = ord.indexOf(s.id); return i < 0 ? 1e6 + sections.indexOf(s) : i; };
+  return `<div class="dsecs" data-key="${key}"><div class="dsec-tools no-print"><span class="small muted">Drag <b>⋮⋮</b> to rearrange · click a heading to collapse</span><span class="spacer"></span><button class="btn sm" data-dsec-reset>Reset layout</button></div>` +
+    [...sections].sort((a, b) => rank(a) - rank(b)).map(s => `<section class="dsec${shut.includes(s.id) ? ' shut' : ''}" data-sec="${s.id}"><div class="dsec-h"><span class="dsec-grip no-print" draggable="true" title="Drag to rearrange" aria-hidden="true">⋮⋮</span><button class="dsec-t" aria-expanded="${!shut.includes(s.id)}">${ic('down')}<span>${esc(s.title)}</span></button>${s.note ? `<span class="small muted dsec-n">${s.note}</span>` : ''}</div><div class="dsec-b"><div>${s.html}</div></div></section>`).join('') + '</div>';
+}
+function bindLayout(root) {
+  const wrap = $('.dsecs', root); if (!wrap) return;
+  const key = wrap.dataset.key; let drag = null;
+  wrap.addEventListener('click', e => {
+    if (e.target.closest('[data-dsec-reset]')) { lsSet('lt-ord-' + key, ''); lsSet('lt-shut-' + key, ''); return render(); }
+    const t = e.target.closest('.dsec-t'); if (!t) return;
+    const sec = t.closest('.dsec'), id = sec.dataset.sec, s = sec.classList.toggle('shut');
+    t.setAttribute('aria-expanded', !s);
+    const cur = lsList('lt-shut-' + key).filter(x => x !== id); if (s) cur.push(id); lsSet('lt-shut-' + key, cur.length ? JSON.stringify(cur) : '');
+  });
+  wrap.addEventListener('dragstart', e => {
+    const g = e.target.closest?.('.dsec-grip'); if (!g) return;
+    drag = g.closest('.dsec'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', drag.dataset.sec);
+    e.dataTransfer.setDragImage(drag.querySelector('.dsec-h'), 12, 12); const d0 = drag; setTimeout(() => { if (drag === d0) d0.classList.add('dragging'); }, 0);
+  });
+  wrap.addEventListener('dragover', e => {
+    if (!drag) return; e.preventDefault();
+    const over = e.target.closest('.dsec'); if (!over || over === drag) return;
+    const r = over.getBoundingClientRect(), after = e.clientY > r.top + r.height / 2;
+    wrap.insertBefore(drag, after ? over.nextSibling : over);
+  });
+  const end = () => {
+    if (!drag) return; drag.classList.remove('dragging'); drag = null;
+    lsSet('lt-ord-' + key, JSON.stringify([...wrap.querySelectorAll('.dsec')].map(x => x.dataset.sec)));
+  };
+  wrap.addEventListener('drop', e => { if (drag) e.preventDefault(); end(); });
+  wrap.addEventListener('dragend', end);
+}
+
+// Board cards: drag a card onto another column to change its status.
+function kanbanDnD(host, table, statuses, dflt) {
+  if (!host || DB.readOnly || DB.confirmOnly) return;
+  let dragId = null;
+  host.ondragstart = e => { const c = e.target.closest?.('[data-card]'); if (!c) return; dragId = c.dataset.card; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); setTimeout(() => c.classList.add('dragging'), 0); };
+  host.ondragend = () => { dragId = null; $$('.dragging, .kcol.over', host).forEach(x => x.classList.remove('dragging', 'over')); };
+  host.ondragover = e => { const col = e.target.closest?.('.kcol'); if (!dragId || !col) return; e.preventDefault(); $$('.kcol.over', host).forEach(x => x !== col && x.classList.remove('over')); col.classList.add('over'); };
+  host.ondragleave = e => { const col = e.target.closest?.('.kcol'); if (col && !col.contains(e.relatedTarget)) col.classList.remove('over'); };
+  host.ondrop = e => {
+    const col = e.target.closest?.('.kcol'); if (!dragId || !col) return; e.preventDefault();
+    const rec = DB.get(table, dragId), to = col.dataset.col;
+    if (rec && statuses.includes(to) && (rec.status || dflt) !== to) { DB.put(table, { ...rec, status: to }); DB.log(`Moved ${recName(table, rec)} to ${to}`); toast(`Moved to ${to}`); }
+    dragId = null; render();
+  };
+}
+
+// Tiny trend line for tiles.
+function sparkSVG(vals, w = 96, h = 28) {
+  if (vals.length < 2 || !vals.some(v => v)) return '';
+  const mx = Math.max(...vals), mn = Math.min(...vals), rng = mx - mn || 1, X = i => 2 + (w - 4) * i / (vals.length - 1), Y = v => h - 3 - (h - 6) * (v - mn) / rng;
+  const pts = vals.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><polyline points="2,${h - 2} ${pts} ${w - 2},${h - 2}" fill="var(--accent-soft)" stroke="none"/><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(vals.length - 1)}" cy="${Y(vals[vals.length - 1])}" r="3" fill="var(--accent)"/></svg>`;
+}
+
+// Whole numbers and whole-dollar tiles count up when a page opens.
+function countUps(root) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  $$('.kpi .v, .big-n', root).forEach(el => {
+    const m = /^(\$?)([\d,]+)$/.exec(el.textContent.trim()); if (!m) return;
+    const end = +m[2].replace(/,/g, ''), pre = m[1]; if (end < 5) return;
+    const t0 = performance.now(), dur = 600;
+    const step = t => { const k = Math.min(1, (t - t0) / dur), v = Math.round(end * (1 - Math.pow(1 - k, 3))); el.textContent = pre + v.toLocaleString(); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  });
+}
+
+// ---- 35-exec.js
+// Executive summary: one screen (and one printed page) for people who need the answer, not the data.
+function execFigures() {
+  const d = DB.data, t = todayStr(), fy0 = fiscalYear(t), lines = d.hardware.filter(isActiveLine), B = S().budgets || {};
+  const qty = l => +l.qty || 0, totalQty = sum(lines, qty), over = lines.filter(l => lineState(l) === 'Overdue'), overQty = sum(over, qty);
+  const devs = d.devices.filter(x => devStatus(x) !== 'Archived'), osBad = devs.filter(x => osState(x) === 'Unsupported').length, openM = d.maintenances.filter(m => !m.endDate).length;
+  const dated = lines.filter(l => plannedDate(l)), aged = lines.filter(l => ageBase(l));
+  const avgAge = aged.length ? sum(aged, l => yearsBetween(ageBase(l), t) * qty(l)) / Math.max(1, sum(aged, qty)) : 0;
+  const factors = [
+    { n: 'Replacement currency', w: 40, v: totalQty ? 1 - overQty / totalQty : 1, why: `${fmtNum(overQty)} of ${fmtNum(totalQty)} devices are past their planned date` },
+    { n: 'Operating system support', w: 25, v: devs.length ? 1 - osBad / devs.length : 1, why: `${fmtNum(osBad)} of ${fmtNum(devs.length)} managed devices run an unsupported OS` },
+    { n: 'Planning data complete', w: 20, v: lines.length ? dated.length / lines.length : 1, why: `${dated.length} of ${lines.length} hardware lines have a date to schedule from` },
+    { n: 'Maintenance backlog', w: 15, v: devs.length ? Math.max(0, 1 - openM / Math.max(1, devs.length * 0.05)) : 1, why: `${openM} open job(s); full marks at under 5% of devices` }
+  ];
+  const score = Math.round(sum(factors, f => f.w * f.v));
+  const fys = Array.from({ length: 5 }, (_, i) => fy0 + i), spendFY = f => sum(lines.filter(l => { const p = plannedDate(l); return p && (fiscalYear(p) === f || (f === fy0 && p < t)); }), lineCost);
+  const budgetFY = f => sum(Object.values(B['FY' + f] || {}), v => +v || 0), hasBudget = fys.some(f => budgetFY(f) > 0);
+  const next12 = sum(lines.filter(l => { const p = plannedDate(l); return p && p <= addMonths(t, 12); }), lineCost);
+  return { d, t, fy0, lines, totalQty, over, overQty, devs, osBad, openM, avgAge, factors, score, fys, spendFY, budgetFY, hasBudget, next12 };
+}
+const scoreBand = s => s >= 85 ? ['Strong', 'ok'] : s >= 70 ? ['Good', 'ok'] : s >= 50 ? ['Watch', 'warn'] : ['At risk', 'bad'];
+function ringSVG(score, band) {
+  const r = 54, c = 2 * Math.PI * r;
+  return `<svg class="ring ${band}" viewBox="0 0 140 140" role="img" aria-label="Fleet health ${score} out of 100"><circle cx="70" cy="70" r="${r}" class="ring-bg"/><circle cx="70" cy="70" r="${r}" class="ring-fg" stroke-dasharray="${c.toFixed(1)}" style="--full:${c.toFixed(1)};--off:${(c * (1 - score / 100)).toFixed(1)}" transform="rotate(-90 70 70)"/><text x="70" y="68" text-anchor="middle" class="ring-n">${score}</text><text x="70" y="88" text-anchor="middle" class="ring-s">out of 100</text></svg>`;
+}
+const meterRow = (label, pctv, tone, right) => `<div class="mrow"><div class="mrow-h"><span>${label}</span><span class="muted small">${right}</span></div><div class="meter ${tone}"><i style="width:${Math.round(Math.max(0, Math.min(1, pctv)) * 100)}%"></i></div></div>`;
+
+VIEWS.exec = {
+  render(el) {
+    const F = execFigures(), { d, t, fy0, lines, totalQty, over, overQty, avgAge, factors, score, fys, spendFY, budgetFY, hasBudget, next12 } = F, [band, tone] = scoreBand(score);
+    if (!lines.length) { el.innerHTML = pageHead('Executive summary', '', 'Executive summary') + '<div class="card empty">No hardware lines yet, so there is nothing to summarize. Import your inventory (Import → Legacy list or the Lab list), then come back.</div>'; return; }
+    const overCost = sum(over, lineCost), budNow = budgetFY(fy0), spNow = spendFY(fy0);
+    const bySpend = fys.map(spendFY);
+    const sentence = `<b>${fmtNum(overQty)} of ${fmtNum(totalQty)} devices (${totalQty ? Math.round(overQty / totalQty * 100) : 0}%)</b> are past their planned replacement date, a ${money(overCost)} backlog. The next 12 months of planned replacements total <b>${money(next12)}</b>${hasBudget && budNow ? `; FY${fy0} has <b>${money(budNow)}</b> budgeted against <b>${money(spNow)}</b> scheduled (${budNow - spNow >= 0 ? money(budNow - spNow) + ' left over' : '<span style="color:var(--danger)">' + money(spNow - budNow) + ' short</span>'})` : ' (no budget entered yet, so there is nothing to compare against)'}. Average device age is <b>${avgAge.toFixed(1)} years</b>.`;
+    // buildings
+    const bRows = [...group(lines, l => labBuilding(l.labId))].map(([b, ls]) => { const q = sum(ls, l => +l.qty || 0), oq = sum(ls.filter(l => lineState(l) === 'Overdue'), l => +l.qty || 0); return { b, q, oq, cost: sum(ls.filter(l => lineState(l) === 'Overdue'), lineCost) }; }).filter(r => r.oq).sort((a, b) => b.oq - a.oq).slice(0, 8);
+    const maxO = Math.max(1, ...bRows.map(r => r.oq));
+    // replace-first labs
+    const labRows = [...group(over, l => l.labId)].map(([id, ls]) => ({ lab: DB.get('labs', id), qty: sum(ls, l => +l.qty || 0), cost: sum(ls, lineCost), oldest: ls.map(l => plannedDate(l)).filter(Boolean).sort()[0] })).filter(r => r.lab).sort((a, b) => b.cost - a.cost).slice(0, 5);
+    // pipeline
+    const pj = d.projects, live = pj.filter(p => !['Complete', 'On hold'].includes(p.status || 'Planned'));
+    const funnel = PROJECT_STATUS.slice(0, 7).map(s => { const ps = pj.filter(p => (p.status || 'Planned') === s); return { s, n: ps.length, v: sum(ps, p => +p.amount || 0) }; });
+    const maxN = Math.max(1, ...funnel.map(f => f.n));
+    const tf = d.techProjects.filter(p => !['Denied', 'On hold'].includes(p.status));
+    const tfReq = sum(tf, p => +p.requested || 0), tfAw = sum(tf, p => +p.awarded || 0), tfSp = sum(tf, p => +p.spent || 0);
+    const bcfg = { type: 'bar', labels: fys.map(f => 'FY' + f), series: [...(hasBudget ? [{ name: 'Budget', values: fys.map(budgetFY) }] : []), { name: 'Scheduled', values: bySpend }], money: true, stacked: false, title: 'Budget vs scheduled spend' };
+    const kt = (icon, cls, v, l, s, spark) => `<div class="kpi ${cls}"><span class="ico">${ic(icon)}</span><span style="flex:1;min-width:0"><div class="v">${v}</div><div class="l">${l}</div>${s ? `<div class="s">${s}</div>` : ''}${spark ? `<div style="margin-top:6px">${spark}</div>` : ''}</span></div>`;
+    const secs = [
+      { id: 'health', title: 'Fleet health', html: `<div class="card hero"><div class="hero-ring">${ringSVG(score, tone)}<span class="badge ${tone}">${band}</span></div><div class="hero-body"><p class="hero-sum">${sentence}</p><div class="hero-f">${factors.map(f => meterRow(`${esc(f.n)} <span class="muted small">(${f.w} pts)</span>`, f.v, f.v >= .85 ? 'ok' : f.v >= .6 ? 'warn' : 'bad', `${Math.round(f.v * f.w)} / ${f.w}`) + `<div class="small muted" style="margin:-2px 0 8px">${esc(f.why)}</div>`).join('')}</div></div></div>`, note: 'Score is a simple weighted blend; the weights are shown so it can be challenged' },
+      { id: 'kpis', title: 'Headline numbers', html: `<div class="kpis">
+        ${kt('laptop', 'infok', `<span class="big-n">${fmtNum(totalQty)}</span>`, 'Devices in inventory', `${d.labs.length} labs · ${d.buildings.length} buildings`)}
+        ${kt('alert', over.length ? 'bad' : 'good', `${totalQty ? Math.round(overQty / totalQty * 100) : 0}%`, 'Past replacement date', `${money(overCost)} to clear`)}
+        ${kt('clock', '', avgAge.toFixed(1) + ' yrs', 'Average device age', `Policy: Win ${S().lifecycle.Windows} / Mac ${S().lifecycle.Mac} yrs`, sparkSVG(AGE_ORDER.slice(0, 6).map(a => sum(lines.filter(l => ageBucket(l) === a), l => +l.qty || 0))))}
+        ${kt('calendar', 'warnk', money(next12), 'Next 12 months', 'planned replacements', sparkSVG(bySpend))}
+        ${kt('dollar', '', hasBudget && budNow ? Math.round(spNow / budNow * 100) + '%' : '—', `FY${fy0} budget used`, hasBudget && budNow ? `${money(spNow)} of ${money(budNow)}` : 'enter budgets in the planner')}
+        ${kt('tool', live.length ? 'warnk' : '', `<span class="big-n">${live.length}</span>`, 'Active projects', `${money(sum(live, p => +p.amount || 0))} in flight`)}
+      </div>` },
+      { id: 'budget', title: 'Budget vs. scheduled spend', html: `<div class="grid g2"><div class="card"><div class="card-h"><h3>Next five fiscal years</h3><span class="spacer"></span><a href="#/planner">Open budget planner →</a></div><div id="ex-bud"></div></div>${chartCard('Planned replacement spend by fiscal year', presetCfg('Planned replacement spend by fiscal year').cfg)}</div>` },
+      { id: 'risk', title: 'Where the risk sits', html: `<div class="grid g2">
+        <div class="card"><div class="card-h"><h3>Overdue devices by building</h3></div>${bRows.length ? bRows.map(r => meterRow(esc(r.b), r.oq / maxO, r.oq / Math.max(1, r.q) > .5 ? 'bad' : 'warn', `${fmtNum(r.oq)} of ${fmtNum(r.q)} · ${money(r.cost)}`)).join('') : '<div class="empty">Nothing is overdue.</div>'}</div>
+        <div class="card"><div class="card-h"><h3>Replace these labs first</h3><span class="spacer"></span><a href="#/plan">Full plan →</a></div>${labRows.length ? `<table><thead><tr><th>Lab</th><th class="num">Devices</th><th>Overdue since</th><th class="num">Cost</th></tr></thead><tbody>${labRows.map(r => `<tr><td><a href="#/lab/${r.lab.id}">${esc(labLabel(r.lab))}</a></td><td class="num">${fmtNum(r.qty)}</td><td class="nowrap">${r.oldest ? fmtDate(r.oldest) : ''}</td><td class="num">${money(r.cost)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Nothing is overdue.</div>'}</div></div>` },
+      { id: 'pipeline', title: 'Projects and Tech Fee funding', html: `<div class="grid g2">
+        <div class="card"><div class="card-h"><h3>Replacement project pipeline</h3><span class="spacer"></span><a href="#/projects">Board →</a></div>${pj.length ? funnel.map(f => meterRow(esc(f.s), f.n / maxN, 'acc', `${f.n}${f.v ? ' · ' + money(f.v) : ''}`)).join('') : '<div class="empty">No projects yet. They are created automatically from the replacement plan.</div>'}</div>
+        <div class="card"><div class="card-h"><h3>Tech Fee projects</h3><span class="spacer"></span><a href="#/techfee">Open →</a></div>${tf.length ? `<div class="kpis" style="grid-template-columns:repeat(3,1fr);margin:0 0 12px"><div class="kpi"><div class="v">${money(tfReq)}</div><div class="l">Requested</div></div><div class="kpi"><div class="v">${money(tfAw)}</div><div class="l">Awarded</div></div><div class="kpi"><div class="v">${money(tfSp)}</div><div class="l">Spent</div></div></div>${meterRow('Awarded vs requested', tfReq ? tfAw / tfReq : 0, 'ok', tfReq ? Math.round(tfAw / tfReq * 100) + '%' : '')}${meterRow('Spent vs awarded', tfAw ? tfSp / tfAw : 0, 'acc', tfAw ? Math.round(tfSp / tfAw * 100) + '%' : '')}` : '<div class="empty">No Tech Fee projects yet.</div>'}</div></div>` },
+      { id: 'mix', title: 'Fleet profile', html: `<div class="grid g2">${chartCard('Hardware age', presetCfg('Hardware age').cfg)}${chartCard('Devices by platform', presetCfg('Devices by platform').cfg)}</div>` }
+    ];
+    el.innerHTML = pageHead('Executive summary', `<span class="muted small" style="align-self:center">As of ${fmtDate(t)}</span><button class="btn" onclick="window.print()">${ic('file')} Print / save as PDF</button>`, 'Executive summary') + dashLayout('exec', secs);
+    const eb = $('#ex-bud', el); if (eb) renderChart(eb, bcfg);
+  }
+};
+
+// ---- 36-assetdash.js
+// Asset overview: lifecycle dashboard for managed devices (status, health, warranty, open repairs, where they are).
+// "Health" is derived, not entered: Critical = unsupported OS or an open repair; Warning = OS ending soon, warranty ended or ending in 90 days, or no check-in past the stale limit.
+function assetHealth(d, t, openIds) {
+  const why = [];
+  if (osState(d) === 'Unsupported') why.push('OS out of support');
+  if (openIds.has(d.id)) why.push('Open repair');
+  if (why.length) return { h: 'Critical', why };
+  if (osState(d) === 'Ending soon') why.push('OS support ending');
+  if (d.warrantyEnd) { const k = daysBetween(t, d.warrantyEnd); if (k < 0) why.push('Warranty expired'); else if (k <= 90) why.push('Warranty ends soon'); }
+  if (d.lastCheckIn && daysBetween(d.lastCheckIn, t) > S().staleDays) why.push('No recent check-in');
+  return { h: why.length ? 'Warning' : 'Safe', why };
+}
+const warrantyBucket = (d, t) => !d.warrantyEnd ? 'No date' : d.warrantyEnd < t ? 'Expired' : daysBetween(t, d.warrantyEnd) <= 90 ? 'About to expire' : 'In warranty';
+
+VIEWS.assets = {
+  render(el) {
+    const A = UI.ad ??= { platform: '', buildingId: '', showArchived: false }, t = todayStr(), d0 = DB.data;
+    let devs = d0.devices.filter(x => A.showArchived || devStatus(x) !== 'Archived');
+    if (A.platform) devs = devs.filter(x => x.platform === A.platform);
+    if (A.buildingId) devs = devs.filter(x => DB.get('labs', x.labId)?.buildingId === A.buildingId);
+    const openJobs = d0.maintenances.filter(m => !m.endDate && m.deviceId), openIds = new Set(openJobs.map(m => m.deviceId));
+    const H = new Map(devs.map(x => [x.id, assetHealth(x, t, openIds)]));
+    const cnt = (f, order) => { const m = new Map(); devs.forEach(x => { const k = f(x); m.set(k, (m.get(k) || 0) + 1); }); let ks = [...m.keys()]; ks = order ? ks.sort((a, b) => (order.indexOf(a) < 0 ? 99 : order.indexOf(a)) - (order.indexOf(b) < 0 ? 99 : order.indexOf(b))) : ks.sort((a, b) => m.get(b) - m.get(a)); return { labels: ks, values: ks.map(k => m.get(k)) }; };
+    const spec = (type, c, title, extra = {}) => ({ type, labels: c.labels, series: [{ name: title, values: c.values }], title, metricLabel: 'assets', ...(type === 'donut' ? { compact: true } : type === 'hbar' ? { w: 440 } : {}), ...extra });
+    const st = cnt(devStatus, DEVICE_STATUSES), hl = cnt(x => H.get(x.id).h, ['Safe', 'Warning', 'Critical']), wr = cnt(x => warrantyBucket(x, t), ['In warranty', 'About to expire', 'Expired', 'No date']);
+    const nonActive = ['Ready to deploy', 'Pending', 'In repair'].map(s => [s, devs.filter(x => devStatus(x) === s).length]);
+    // warranty expiry by month (next 12), stacked by platform
+    const months = Array.from({ length: 12 }, (_, i) => addMonths(t, i).slice(0, 7)), plats = [...new Set(devs.map(x => x.platform || 'Other'))];
+    const wm = { type: 'bar', labels: months.map(m => new Date(m + '-15').toLocaleString(undefined, { month: 'short', year: '2-digit' })), series: plats.map(p => ({ name: p, values: months.map(m => devs.filter(x => (x.platform || 'Other') === p && (x.warrantyEnd || '').slice(0, 7) === m).length) })), title: 'Warranty ends by month', w: 480 };
+    // open repairs by model
+    const repByModel = [...group(devs.filter(x => openIds.has(x.id)), x => x.model || 'Unknown')].map(([k, v]) => [k, v.length]).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const bld = cnt(x => labBuilding(x.labId)), src = cnt(x => x.source || 'Manual'), os = cnt(x => osState(x) === 'Unsupported' ? 'Unsupported OS' : osState(x) === 'Ending soon' ? 'OS ending soon' : 'Supported / no date', ['Supported / no date', 'OS ending soon', 'Unsupported OS']), ci = cnt(checkInBucket, ['≤ 7 days', '8–30 days', `31–${S().staleDays} days`, `> ${S().staleDays} days (stale)`, 'Never / unknown']);
+    const mdl = cnt(x => x.model || 'Unknown'), top = { labels: mdl.labels.slice(0, 10), values: mdl.values.slice(0, 10) };
+    const attn = devs.filter(x => H.get(x.id).h !== 'Safe').sort((a, b) => (H.get(a.id).h === 'Critical' ? 0 : 1) - (H.get(b.id).h === 'Critical' ? 0 : 1) || H.get(b.id).why.length - H.get(a.id).why.length).slice(0, 10);
+    const card = (id, title, link) => `<div class="card"><div class="card-h"><h3>${esc(title)}</h3>${link ? `<span class="spacer"></span>${link}` : ''}</div><div id="${id}"></div></div>`;
+    const list = rows => rows.length ? `<ul class="alerts">${rows.map(([k, n, h]) => `<li><a href="${h || '#/devices'}">${esc(k)}</a><span class="spacer" style="flex:1"></span><b class="big-n" style="font-size:20px">${n}</b></li>`).join('')}</ul>` : '<div class="empty">None.</div>';
+    const secs = [
+      { id: 'top', title: 'Asset summary', html: `<div class="grid g4">
+        <div class="card"><div class="card-h"><h3>Total assets</h3></div><div class="bigtile"><span class="big-n">${fmtNum(devs.length)}</span><div class="small muted">${devs.length === d0.devices.length ? 'all managed devices' : `of ${fmtNum(d0.devices.length)} after filters`}</div></div></div>
+        ${card('ad-st', 'Total assets by status')}
+        <div class="card"><div class="card-h"><h3>Non-active assets by status</h3></div>${list(nonActive.map(([k, n]) => [k, n]))}</div>
+        ${card('ad-hl', 'Total assets by health status')}</div>`, note: 'Health: Critical = unsupported OS or open repair; Warning = OS ending, warranty ended/ending, or stale check-in' },
+      { id: 'life', title: 'Warranty and repairs', html: `<div class="grid g3">
+        <div class="card"><div class="card-h"><h3>Assets with open repairs</h3><span class="spacer"></span><a href="#/maintenance">Maintenance →</a></div>${list(repByModel.map(([k, n]) => [k, n, '#/maintenance']))}</div>
+        ${card('ad-wr', 'Assets by warranty status')}${card('ad-wm', 'Assets by warranty expiry month')}</div>` },
+      { id: 'where', title: 'Where assets are', html: `<div class="grid g2">${card('ad-bld', 'Assets by building')}${card('ad-top', 'Top models')}</div><div class="grid g3">${card('ad-os', 'Operating system support')}${card('ad-ci', 'Last check-in')}${card('ad-src', 'Source of record')}</div>` },
+      { id: 'attn', title: 'Assets that need attention', html: `<div class="card">${attn.length ? `<div class="tbl-wrap"><table><thead><tr><th>Asset</th><th>Lab</th><th>Platform</th><th>Health</th><th>Why</th></tr></thead><tbody>${attn.map(x => `<tr data-go="${x.id}"><td><a href="#/device/${x.id}">${esc(x.name || x.serial || x.id)}</a><div class="small muted">${esc(x.model || '')}</div></td><td>${x.labId ? esc(labLabel(DB.get('labs', x.labId))) : '<span class="muted">Unassigned</span>'}</td><td>${esc(x.platform || '')}</td><td><span class="badge ${H.get(x.id).h === 'Critical' ? 'bad' : 'warn'}">${H.get(x.id).h}</span></td><td class="small">${esc(H.get(x.id).why.join(' · '))}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Every asset is healthy.</div>'}</div>` }
+    ];
+    const tools = `<div class="card no-print"><div class="toolbar"><div class="field"><label>Platform</label><select id="ad-p"><option value="">All</option>${optionsHTML(PLATFORMS, A.platform)}</select></div><div class="field"><label>Building</label><select id="ad-b"><option value="">All</option>${optionsHTML(buildingOptions(), A.buildingId)}</select></div><label class="chk"><input type="checkbox" id="ad-a"${A.showArchived ? ' checked' : ''}> Include archived</label></div></div>`;
+    el.innerHTML = pageHead('Asset overview', `<a class="btn" href="#/devices">All devices</a><button class="btn" onclick="window.print()">${ic('file')} Print</button>`, 'Asset overview') + tools + (devs.length || d0.devices.length ? dashLayout('assets', secs) : '<div class="card empty">No managed devices yet. Import Intune, Mosyle or LabStats exports to populate this page.</div>');
+    $('#ad-p', el).onchange = e => { A.platform = e.target.value; render(); }; $('#ad-b', el).onchange = e => { A.buildingId = e.target.value; render(); }; $('#ad-a', el).onchange = e => { A.showArchived = e.target.checked; render(); };
+    const put = (id, s) => { const h = $('#' + id, el); if (h) renderChart(h, s); };
+    put('ad-st', spec('donut', st, 'Status')); put('ad-hl', spec('donut', hl, 'Health')); put('ad-wr', spec('hbar', wr, 'Warranty')); put('ad-wm', wm);
+    put('ad-bld', spec('hbar', bld, 'Building', { w: 760 })); put('ad-top', spec('hbar', top, 'Model', { w: 760 })); put('ad-os', spec('donut', os, 'OS support')); put('ad-ci', spec('bar', ci, 'Check-in')); put('ad-src', spec('donut', src, 'Source'));
   }
 };
 
