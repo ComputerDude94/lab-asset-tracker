@@ -149,8 +149,13 @@ body.nav-collapsed nav a{justify-content:center;padding:10px}body.nav-collapsed 
 @media print{#side,.top,.no-print,.btn,.tbl-bar,#toasts,.crumbs{display:none!important}.main-col{margin:0}body{background:#fff;color:#000}main#view{padding:0}.card,.lab-block,.kpi{box-shadow:none}.tbl-wrap{max-height:none;overflow:visible}}
 
 /* ---- collapsible sidebar groups ---- */
-.nav-tools{display:flex;gap:4px;justify-content:flex-end;padding:0 4px 2px}
-.nav-tools button{background:none;border:0;color:var(--side-head);font-size:11px;cursor:pointer;padding:3px 6px;border-radius:5px}.nav-tools button:hover{color:#fff;background:var(--side2)}
+.nav-tools{padding:0 2px 4px}
+.nav-tools button{display:flex;align-items:center;gap:7px;width:100%;background:var(--side2);border:1px solid rgba(255,255,255,.08);color:var(--side-text);font:inherit;font-size:12px;cursor:pointer;padding:6px 10px;border-radius:8px}.nav-tools button:hover{color:#fff;border-color:rgba(255,255,255,.2)}
+.nav-tools button .ic{font-size:15px;transition:transform .2s}.nav-tools button[data-navall="open"] .ic{transform:rotate(-90deg)}
+.side-toggle{position:absolute;top:20px;right:-14px;width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer;display:grid;place-items:center;z-index:35;padding:0}
+.side-toggle:hover{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.side-toggle .ic{font-size:16px;transform:rotate(90deg);transition:transform .2s}body.nav-collapsed .side-toggle .ic{transform:rotate(-90deg)}
+@media(max-width:900px){.side-toggle{display:none}}
 nav .navg-h{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;cursor:pointer;text-align:left;font-family:inherit}
 nav .navg-h:hover{color:#fff}nav .navg-h .ic{font-size:14px;transition:transform .2s}
 .navg.shut .navg-h .ic{transform:rotate(-90deg)}
@@ -215,6 +220,7 @@ a.kpi{transition:transform .15s,border-color .15s,box-shadow .15s}a.kpi:hover{tr
 <body>
 <div id="app" hidden>
   <aside id="side">
+    <button id="side-toggle" class="side-toggle" type="button" aria-label="Collapse menu" title="Collapse menu"></button>
     <div class="brand"><span class="logo">&#9638;</span><span class="bt">Lab Asset Tracker<small id="org"></small></span></div>
     <nav id="nav"></nav>
     <div class="side-foot"><div id="sync"><span class="dot"></span><span id="sync-t"></span></div></div>
@@ -1637,7 +1643,7 @@ const navActive = (k, name) => name === k || (name === 'lab' && k === 'labs') ||
 function renderNav(name) {
   const groups = []; NAV.forEach(([k, l, i]) => { if (k === 'sep') groups.push({ title: l, items: [] }); else { if (!groups.length) groups.push({ title: '', items: [] }); groups[groups.length - 1].items.push([k, l, i]); } });
   const closed = navClosed();
-  $('#nav').innerHTML = `<div class="nav-tools"><button data-navall="close">Collapse all</button><button data-navall="open">Expand all</button></div>` + groups.map(g => {
+  $('#nav').innerHTML = `<div class="nav-tools"><button id="nav-fold" data-navall="${groups.filter(g => g.title).every(g => closed.includes(g.title)) ? 'open' : 'close'}" title="Fold or unfold every section in this menu">${ic('down')}<span>${groups.filter(g => g.title).every(g => closed.includes(g.title)) ? 'Unfold sections' : 'Fold sections'}</span></button></div>` + groups.map(g => {
     const act = g.items.some(([k]) => navActive(k, name)), shut = g.title && closed.includes(g.title) && !act;
     const links = g.items.map(([k, l, i]) => `<a href="#/${k}" title="${l}" class="${navActive(k, name) ? 'on' : ''}">${ic(i)}<span>${l}</span>${NAV_COUNT[k] ? `<span class="cnt">${fmtNum(NAV_COUNT[k]())}</span>` : ''}</a>`).join('');
     return g.title ? `<div class="navg${shut ? ' shut' : ''}" data-g="${esc(g.title)}"><button class="sep navg-h" aria-expanded="${!shut}"><span>${esc(g.title)}</span>${ic('down')}</button><div class="navg-body"><div>${links}</div></div></div>` : links;
@@ -1650,6 +1656,8 @@ document.addEventListener('click', e => {
   let c = navClosed();
   if (h) { const g = h.parentElement.dataset.g; c = c.includes(g) ? c.filter(x => x !== g) : [...c, g]; }
   else c = all.dataset.navall === 'close' ? titles : [];
+  const fold = document.getElementById('nav-fold'), allShut = titles.every(x => c.includes(x));
+  if (fold) { fold.dataset.navall = allShut ? 'open' : 'close'; fold.querySelector('span').textContent = allShut ? 'Unfold sections' : 'Fold sections'; }
   lsSet('lt-navc', c.length ? JSON.stringify(c) : '');
   document.querySelectorAll('#nav .navg').forEach(x => { const s = c.includes(x.dataset.g); x.classList.toggle('shut', s); x.querySelector('.navg-h').setAttribute('aria-expanded', !s); });
 });
@@ -2553,8 +2561,11 @@ function initChrome() {
   $('#create-menu').innerHTML = `<div class="dh">Create new</div>` + [['lab', 'monitor', 'Lab'], ['hardware', 'cpu', 'Hardware line'], ['device', 'laptop', 'Device'], ['model', 'tag', 'Model'], ['software', 'package', 'Software'], ['contact', 'users', 'Contact'], ['maintenance', 'tool', 'Maintenance'], ['building', 'building', 'Building']]
     .map(([k, i, l]) => `<button data-create="${k}">${ic(i)} ${l}</button>`).join('');
   $('#btn-mode').onclick = cycleMode;
-  setTimeout(() => { if (lsGet('lt-rail') === '1' && innerWidth > 900) document.body.classList.add('nav-collapsed'); });
-  $('#btn-menu').onclick = () => { if (innerWidth <= 900) return document.body.classList.toggle('nav-open'); lsSet('lt-rail', document.body.classList.toggle('nav-collapsed') ? '1' : ''); };
+  const rail = on => { document.body.classList.toggle('nav-collapsed', on); const b = $('#side-toggle'); b.setAttribute('aria-label', on ? 'Expand menu' : 'Collapse menu'); b.title = on ? 'Expand menu' : 'Collapse menu'; };
+  $('#side-toggle').innerHTML = ic('down');
+  setTimeout(() => { if (lsGet('lt-rail') === '1' && innerWidth > 900) rail(true); });
+  const toggleMenu = () => { if (innerWidth <= 900) return document.body.classList.toggle('nav-open'); const on = !document.body.classList.contains('nav-collapsed'); rail(on); lsSet('lt-rail', on ? '1' : ''); };
+  $('#btn-menu').onclick = toggleMenu; $('#side-toggle').onclick = toggleMenu;
   document.addEventListener('click', e => {
     const t = e.target, dd = t.closest('.dd');
     $$('.dd.open').forEach(x => { if (x !== dd) x.classList.remove('open'); });

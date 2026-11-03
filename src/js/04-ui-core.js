@@ -247,7 +247,7 @@ const navActive = (k, name) => name === k || (name === 'lab' && k === 'labs') ||
 function renderNav(name) {
   const groups = []; NAV.forEach(([k, l, i]) => { if (k === 'sep') groups.push({ title: l, items: [] }); else { if (!groups.length) groups.push({ title: '', items: [] }); groups[groups.length - 1].items.push([k, l, i]); } });
   const closed = navClosed();
-  $('#nav').innerHTML = `<div class="nav-tools"><button data-navall="close">Collapse all</button><button data-navall="open">Expand all</button></div>` + groups.map(g => {
+  $('#nav').innerHTML = `<div class="nav-tools"><button id="nav-fold" data-navall="${groups.filter(g => g.title).every(g => closed.includes(g.title)) ? 'open' : 'close'}" title="Fold or unfold every section in this menu">${ic('down')}<span>${groups.filter(g => g.title).every(g => closed.includes(g.title)) ? 'Unfold sections' : 'Fold sections'}</span></button></div>` + groups.map(g => {
     const act = g.items.some(([k]) => navActive(k, name)), shut = g.title && closed.includes(g.title) && !act;
     const links = g.items.map(([k, l, i]) => `<a href="#/${k}" title="${l}" class="${navActive(k, name) ? 'on' : ''}">${ic(i)}<span>${l}</span>${NAV_COUNT[k] ? `<span class="cnt">${fmtNum(NAV_COUNT[k]())}</span>` : ''}</a>`).join('');
     return g.title ? `<div class="navg${shut ? ' shut' : ''}" data-g="${esc(g.title)}"><button class="sep navg-h" aria-expanded="${!shut}"><span>${esc(g.title)}</span>${ic('down')}</button><div class="navg-body"><div>${links}</div></div></div>` : links;
@@ -260,6 +260,8 @@ document.addEventListener('click', e => {
   let c = navClosed();
   if (h) { const g = h.parentElement.dataset.g; c = c.includes(g) ? c.filter(x => x !== g) : [...c, g]; }
   else c = all.dataset.navall === 'close' ? titles : [];
+  const fold = document.getElementById('nav-fold'), allShut = titles.every(x => c.includes(x));
+  if (fold) { fold.dataset.navall = allShut ? 'open' : 'close'; fold.querySelector('span').textContent = allShut ? 'Unfold sections' : 'Fold sections'; }
   lsSet('lt-navc', c.length ? JSON.stringify(c) : '');
   document.querySelectorAll('#nav .navg').forEach(x => { const s = c.includes(x.dataset.g); x.classList.toggle('shut', s); x.querySelector('.navg-h').setAttribute('aria-expanded', !s); });
 });

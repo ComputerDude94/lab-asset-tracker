@@ -142,8 +142,13 @@ body.nav-collapsed nav a{justify-content:center;padding:10px}body.nav-collapsed 
 @media print{#side,.top,.no-print,.btn,.tbl-bar,#toasts,.crumbs{display:none!important}.main-col{margin:0}body{background:#fff;color:#000}main#view{padding:0}.card,.lab-block,.kpi{box-shadow:none}.tbl-wrap{max-height:none;overflow:visible}}
 
 /* ---- collapsible sidebar groups ---- */
-.nav-tools{display:flex;gap:4px;justify-content:flex-end;padding:0 4px 2px}
-.nav-tools button{background:none;border:0;color:var(--side-head);font-size:11px;cursor:pointer;padding:3px 6px;border-radius:5px}.nav-tools button:hover{color:#fff;background:var(--side2)}
+.nav-tools{padding:0 2px 4px}
+.nav-tools button{display:flex;align-items:center;gap:7px;width:100%;background:var(--side2);border:1px solid rgba(255,255,255,.08);color:var(--side-text);font:inherit;font-size:12px;cursor:pointer;padding:6px 10px;border-radius:8px}.nav-tools button:hover{color:#fff;border-color:rgba(255,255,255,.2)}
+.nav-tools button .ic{font-size:15px;transition:transform .2s}.nav-tools button[data-navall="open"] .ic{transform:rotate(-90deg)}
+.side-toggle{position:absolute;top:20px;right:-14px;width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer;display:grid;place-items:center;z-index:35;padding:0}
+.side-toggle:hover{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.side-toggle .ic{font-size:16px;transform:rotate(90deg);transition:transform .2s}body.nav-collapsed .side-toggle .ic{transform:rotate(-90deg)}
+@media(max-width:900px){.side-toggle{display:none}}
 nav .navg-h{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;cursor:pointer;text-align:left;font-family:inherit}
 nav .navg-h:hover{color:#fff}nav .navg-h .ic{font-size:14px;transition:transform .2s}
 .navg.shut .navg-h .ic{transform:rotate(-90deg)}

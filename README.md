@@ -145,7 +145,7 @@ The Projects page creates a Planned project for every lab that is overdue or due
 - **tools/:** `Register-NightlyExport.ps1` schedules the Intune export; Mosyle and LabStats scheduled pulls are not provided because their API details weren't verified (see tools/README.md).
 
 ## Layout, drag and drop, and the executive summary
-- **Collapsible menu:** click a sidebar group heading to fold it (or use *Collapse all* / *Expand all*). The ☰ button shrinks the sidebar to an icon rail. Both choices are remembered per browser.
+- **Collapsible menu:** click a sidebar group heading to fold it (or use the single *Fold sections* / *Unfold sections* button at the top of the menu). The round arrow on the sidebar's edge, or the ☰ button, shrinks the whole sidebar to an icon rail and back. Both choices are remembered per browser.
 - **Rearrangeable pages:** on the Dashboard and Executive summary, drag a section by its **⋮⋮** handle to reorder it and click its heading to collapse it. *Reset layout* restores the default. Layouts are stored in the browser, not in the shared data file.
 - **Boards:** drag a card between columns on *Replacement projects* and *Tech Fee projects* to change its status (the ‹ › buttons still work). Viewers and Lab managers can't drag.
 - **Executive summary:** a fleet health score (the four weighted factors are shown), headline numbers, budget vs. scheduled spend, overdue devices by building, labs to replace first, the project pipeline, Tech Fee funding and fleet profile. *Print / save as PDF* gives a one-page handout.
