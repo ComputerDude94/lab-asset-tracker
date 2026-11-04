@@ -81,9 +81,9 @@ function bindDrop(host, onText) {
 VIEWS.import = {
   render(el) {
     const tab = UI.impTab || 'devices';
-    el.innerHTML = pageHead('Import') + `<div class="tabs"><a data-tab="devices" class="${tab === 'devices' ? 'on' : ''}">Intune · Mosyle · LabStats devices</a><a data-tab="usage" class="${tab === 'usage' ? 'on' : ''}">LabStats usage</a><a data-tab="inventory" class="${tab === 'inventory' ? 'on' : ''}">Old tracker / Microsoft Lists</a><a data-tab="labs" class="${tab === 'labs' ? 'on' : ''}">Lab list</a><a data-tab="warranty" class="${tab === 'warranty' ? 'on' : ''}">Warranty dates</a><a data-tab="apps" class="${tab === 'apps' ? 'on' : ''}">Installed apps</a></div><div id="imp"></div>`;
+    el.innerHTML = pageHead('Import') + `<div class="tabs"><a data-tab="devices" class="${tab === 'devices' ? 'on' : ''}">Intune · Mosyle · LabStats devices</a><a data-tab="usage" class="${tab === 'usage' ? 'on' : ''}">LabStats usage</a><a data-tab="inventory" class="${tab === 'inventory' ? 'on' : ''}">Old tracker / Microsoft Lists</a><a data-tab="labs" class="${tab === 'labs' ? 'on' : ''}">Lab list</a><a data-tab="autopilot" class="${tab === 'autopilot' ? 'on' : ''}">Autopilot hashes</a><a data-tab="warranty" class="${tab === 'warranty' ? 'on' : ''}">Warranty dates</a><a data-tab="apps" class="${tab === 'apps' ? 'on' : ''}">Installed apps</a></div><div id="imp"></div>`;
     el.onclick = e => { const t = e.target.closest('[data-tab]'); if (t) { UI.impTab = t.dataset.tab; render(); } };
-    ({ devices: deviceImport, usage: usageImport, inventory: inventoryImport, labs: labListImport, warranty: warrantyImport, apps: appsImport })[tab]($('#imp', el));
+    ({ devices: deviceImport, usage: usageImport, inventory: inventoryImport, labs: labListImport, autopilot: autopilotImport, warranty: warrantyImport, apps: appsImport })[tab]($('#imp', el));
   }
 };
 
